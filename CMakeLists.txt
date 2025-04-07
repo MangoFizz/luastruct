@@ -13,3 +13,11 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-missing-field-initializers -Wno-format"
 
 include(lib/lua/lua.cmake)
 include_directories(lib/lua)
+
+add_executable(test 
+    src/main.c 
+    src/luastruct.c
+    src/debug.c
+)
+set_target_properties(test PROPERTIES LINK_FLAGS "-static -static-libgcc")
+target_link_libraries(test lua53)
