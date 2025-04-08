@@ -146,6 +146,18 @@ LuasStruct *luas_check_struct(lua_State *state, int index);
 void luas_new_struct_field(lua_State *state, const char *name, LuasType type, const char *type_name, uint32_t offset, uint32_t count, bool pointer, bool readonly);
 
 /**
+ * Create a new bit field in a struct.
+ * @param state Lua state.
+ * @param name Name of the field.
+ * @param type Type of the field.
+ * @param offset Offset of the field in the struct.
+ * @param bit_offset Bit offset of the field in the struct.
+ * @param pointer Whether the field is a pointer.
+ * @param readonly Whether the field is read-only.
+ */
+void luas_new_struct_bit_field(lua_State *state, const char *name, LuasType type, uint32_t offset, uint32_t bit_offset, bool pointer, bool readonly);
+
+/**
  * Create a new dynamic array field in a struct.
  * @param state Lua state.
  * @param name Name of the field.
@@ -158,6 +170,17 @@ void luas_new_struct_field(lua_State *state, const char *name, LuasType type, co
  */
 void luas_new_struct_dynamic_array_field(lua_State *state, const char *name, LuasType type, const char *type_name, uint32_t offset, bool pointer, bool readonly, bool elements_are_readonly);
 
+/**
+ * Create a new Luastruct struct.
+ * @param state Lua state.
+ * @param name Name of the struct.
+ * @param super_name Name of the super struct.
+ */
+#define LUASTRUCT_NEW_STRUCT(state, type, super_type) { \
+	struct type; \
+	struct super_type; \
+	luas_new_struct(state, #type, #super_type, sizeof(struct type)); \
+}
 
 #ifdef __cplusplus
 }

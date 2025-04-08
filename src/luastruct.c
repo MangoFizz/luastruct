@@ -228,6 +228,56 @@ void luas_new_struct_field(lua_State *state, const char *name, LuasType type, co
     insert_struct_field(st, &field);
 }
 
+void luas_new_struct_bit_field(lua_State *state, const char *name, LuasType type, uint32_t offset, uint32_t bit_offset, bool pointer, bool readonly) {
+    LuasStruct *st = luas_check_struct(state, -1);
+    if(!st) {
+        LUAS_DEBUG("Invalid struct object");
+        return;
+    }
+
+    if(strlen(name) >= LUASTRUCT_TYPENAME_LENGTH) {
+        LUAS_DEBUG("Field name too long: %s", name);
+        return;
+    }
+
+    uint32_t size = 0;
+    switch(type) {
+        case LUAS_TYPE_INT8:
+        case LUAS_TYPE_UINT8:
+            size = 1;
+            break;
+        case LUAS_TYPE_INT16:
+        case LUAS_TYPE_UINT16:
+            size = 2;
+            break;
+        case LUAS_TYPE_INT32:
+        case LUAS_TYPE_UINT32:
+            size = 4;
+            break;
+        default:
+            LUAS_DEBUG("Invalid bitfield type: %d", type);
+            return;
+    }
+    if(bit_offset >= size * 8) {
+        LUAS_DEBUG("Bit offset out of range: %d", bit_offset);
+        return;
+    }
+
+    LuasStructField field;
+    strncpy(field.field_name, name, LUASTRUCT_TYPENAME_LENGTH);
+    field.field_name[strlen(field.field_name)] = '\0';
+    field.type = LUAS_TYPE_BITFIELD;
+    field.type_info = NULL;
+    field.offset = offset;
+    field.count = 0;
+    field.pointer = pointer;
+    field.readonly = readonly;
+    field.bitfield.size = size;
+    field.bitfield.offset = bit_offset;
+
+    insert_struct_field(st, &field);
+}
+
 void luas_new_struct_dynamic_array_field(lua_State *state, const char *name, LuasType type, const char *type_name, uint32_t offset, bool pointer, bool readonly, bool elements_are_readonly) {
     LuasStruct *st = luas_check_struct(state, -1);
     if(!st) {
