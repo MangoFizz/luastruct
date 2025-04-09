@@ -143,7 +143,19 @@ LuastructStruct *luastruct_check_struct(lua_State *state, int index);
  * @param pointer Whether the field is a pointer.
  * @param readonly Whether the field is read-only.
  */
-void luas_new_struct_field(lua_State *state, const char *name, LuasType type, const char *type_name, uint32_t offset, uint32_t count, bool pointer, bool readonly);
+void luastruct_new_struct_field(lua_State *state, const char *name, LuastructType type, const char *type_name, uint32_t offset, uint32_t count, bool pointer, bool readonly);
+
+/**
+ * Create a new bit field in a struct.
+ * @param state Lua state.
+ * @param name Name of the field.
+ * @param type Type of the field.
+ * @param offset Offset of the field in the struct.
+ * @param bit_offset Bit offset of the field in the struct.
+ * @param pointer Whether the field is a pointer.
+ * @param readonly Whether the field is read-only.
+ */
+void luastruct_new_struct_bit_field(lua_State *state, const char *name, LuastructType type, uint32_t offset, uint32_t bit_offset, bool pointer, bool readonly);
 
 /**
  * Create a new dynamic array field in a struct.
@@ -158,6 +170,15 @@ void luas_new_struct_field(lua_State *state, const char *name, LuasType type, co
  */
 void luastruct_new_struct_dynamic_array_field(lua_State *state, const char *name, LuastructType type, const char *type_name, uint32_t offset, bool pointer, bool readonly, bool elements_are_readonly);
 
+/**
+ * Create a new object.
+ * @param state Lua state.
+ * @param type_name Name of the type of the object.
+ * @param data Pointer to the data of the object.
+ * @param readonly Whether the object is read-only.
+ * @return The number of values pushed onto the stack.
+ */
+int luastruct_new_object(lua_State *state, const char *type_name, void *data, bool readonly);
 
 #ifdef __cplusplus
 }

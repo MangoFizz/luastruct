@@ -2,29 +2,30 @@
 #include <string.h>
 #include "lauxlib.h"
 #include "luastruct.h"
+#include "helpers.h"
 #include "debug.h"
 
-int count_getter(lua_State *state) {
-    lua_pushinteger(state, 10);
-    return 1;
-}
+typedef struct TestStruct {
+    int a;
+    float b;
+    bool c;
+    const int8_t d;
+} TestStruct;
 
 int main(void) {
     void *state = luaL_newstate();
     printf("State: %p\n", state);
 
-    luas_new_struct(state, "TestStruct", NULL, 20);
-    luas_new_struct_field(state, "super_field_1", LUAS_TYPE_INT32, NULL, 0, 8, false, false);
-    luas_new_struct_field(state, "super_field_4", LUAS_TYPE_FLOAT, NULL, 12, 1, true, true);
-    luas_new_struct_field(state, "super_field_2", LUAS_TYPE_BOOL, NULL, 4, 0, true, false);
-    luas_new_struct_field(state, "super_field_3", LUAS_TYPE_INT8, NULL, 8, 2, false, true);
-    luas_new_struct_dynamic_array_field(state, "dynamic_array_field", LUAS_TYPE_UINT16, NULL, 16, false, false, false);
+    LUASTRUCT_NEW_STRUCT(state, TestStruct);
+    LUASTRUCT_NEW_INT_FIELD(state, TestStruct, a, false);
+    LUASTRUCT_NEW_FLOAT_FIELD(state, TestStruct, b, false);
+    LUASTRUCT_NEW_BOOL_FIELD(state, TestStruct, c, false);
+    LUASTRUCT_NEW_INT_FIELD(state, TestStruct, d, true);
 
-    luas_new_struct(state, "TestStruct2", NULL, 30);
-    luas_new_struct(state, "TestStruct3", "TestStruct", 25);
+    luastruct_print_registered_types(state);
+    luastruct_print_struct_definition(state, "TestStruct");
 
-    luasd_print_registered_types(state);
-    luasd_print_struct_fields(state, "TestStruct");
+    LUASTRUCT_NEW_OBJECT(state, TestStruct, NULL, false);
 
     lua_close(state);
 
