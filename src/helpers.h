@@ -18,15 +18,15 @@
 
 #define LUASTRUCT_NEW_INT_FIELD(state, type, field, read_only) { \
 	{ struct type; } \
-	LuastructType type; \
+	LuastructType int_type; \
 	switch(sizeof(LUASTRUCT_STRUCT_FIELD(type, field))) { \
-		case 1: type = LUAS_TYPE_INT8; break; \
-		case 2: type = LUAS_TYPE_INT16; break; \
-		case 4: type = LUAS_TYPE_INT32; break; \
-		case 8: type = LUAS_TYPE_INT64; break; \
-		default: type = LUAS_TYPE_INT32; break; \
+		case 1: int_type = LUAS_TYPE_INT8; break; \
+		case 2: int_type = LUAS_TYPE_INT16; break; \
+		case 4: int_type = LUAS_TYPE_INT32; break; \
+		case 8: int_type = LUAS_TYPE_INT64; break; \
+		default: int_type = LUAS_TYPE_INT32; break; \
 	} \
-	luastruct_new_struct_field(state, #field, type, NULL, offsetof(struct type, field), 0, false, read_only); \
+	luastruct_new_struct_field(state, #field, int_type, NULL, offsetof(struct type, field), 0, false, read_only); \
 }
 
 #define LUASTRUCT_NEW_FLOAT_FIELD(state, type, field, read_only) { \
