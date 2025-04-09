@@ -9,7 +9,7 @@
 
 const char *objects_registry_name = "luastruct_objects";
 const char *types_registry_name = "luastruct_types";
-const char *struct_metatable_name = "luas_struct_metatable";
+const char *struct_metatable_name = "luastruct_struct_metatable";
 
 #define LUAS_DEBUG(...) \
     do { \
@@ -24,22 +24,22 @@ const char *struct_metatable_name = "luas_struct_metatable";
         } \
     } while(false)
 
-static void free_struct_fields_recursively(LuasStructField *field) {
+static void free_struct_fields_recursively(LuastructStructField *field) {
     if(field->next_by_offset) {
         free_struct_fields_recursively(field->next_by_offset);
     }
     free(field);
 }
 
-static void insert_struct_field(LuasStruct *st, const LuasStructField *field) {
-    LuasStructField *new_field = malloc(sizeof(LuasStructField));
-    memcpy(new_field, field, sizeof(LuasStructField));
+static void insert_struct_field(LuastructStruct *st, const LuastructStructField *field) {
+    LuastructStructField *new_field = malloc(sizeof(LuastructStructField));
+    memcpy(new_field, field, sizeof(LuastructStructField));
     new_field->next_by_offset = NULL;
     new_field->next_by_name = NULL;
     
     // Insert by offset
-    LuasStructField *prev = NULL;
-    LuasStructField *current = st->fields;
+    LuastructStructField *prev = NULL;
+    LuastructStructField *current = st->fields;
     while(current && current->offset < new_field->offset) {
         prev = current;
         current = current->next_by_offset;
@@ -68,8 +68,8 @@ static void insert_struct_field(LuasStruct *st, const LuasStructField *field) {
     new_field->next_by_name = current;
 }
 
-int luas_get_type(lua_State *state, const char *name) {
-    luas_get_types_registry(state);
+int luastruct_get_type(lua_State *state, const char *name) {
+    luastruct_get_types_registry(state);
     lua_getfield(state, -1, name);
     if(lua_isnil(state, -1)) {
         lua_pop(state, 2);
@@ -79,12 +79,12 @@ int luas_get_type(lua_State *state, const char *name) {
     return 1;
 }
 
-static LuasTypeInfo *get_type_info(lua_State *state, LuasType type, const char *type_name) {
+static LuastructTypeInfo *get_type_info(lua_State *state, LuastructType type, const char *type_name) {
     switch(type) {
         case LUAS_TYPE_STRUCT:
         case LUAS_TYPE_ENUM:
         case LUAS_TYPE_DYNARRAY:
-            luas_get_type(state, type_name);
+            luastruct_get_type(state, type_name);
             if(lua_isnil(state, -1)) {
                 return NULL;
             }
@@ -94,7 +94,7 @@ static LuasTypeInfo *get_type_info(lua_State *state, LuasType type, const char *
     }
 }
 
-int luas_get_types_registry(lua_State *state) {
+int luastruct_get_types_registry(lua_State *state) {
     lua_getfield(state, LUA_REGISTRYINDEX, types_registry_name);
     if(lua_isnil(state, -1)) {
         lua_pop(state, 1);
@@ -106,8 +106,8 @@ int luas_get_types_registry(lua_State *state) {
     return 1;
 }
 
-int luas_struct__gc(lua_State *state) {
-    LuasStruct *st = luaL_checkudata(state, 1, struct_metatable_name);
+int luastruct_struct__gc(lua_State *state) {
+    LuastructStruct *st = luaL_checkudata(state, 1, struct_metatable_name);
     if(!st) {
         LUAS_DEBUG("Invalid struct object");
         return 0;
@@ -118,14 +118,14 @@ int luas_struct__gc(lua_State *state) {
     return 0;
 }
 
-int luas_new_struct(lua_State *state, const char *name, const char *super_name, uint32_t size) {
-    if(luas_get_type(state, name) != 0) {
+int luastruct_new_struct(lua_State *state, const char *name, const char *super_name, uint32_t size) {
+    if(luastruct_get_type(state, name) != 0) {
         return 1;
     }
 
-    LuasStruct *super = NULL;
+    LuastructStruct *super = NULL;
     if(super_name) {
-        if(luas_get_type(state, super_name) == 0) {
+        if(luastruct_get_type(state, super_name) == 0) {
             LUAS_DEBUG("Super struct type does not exist: %s", super_name);
             return 0;
         }
@@ -137,7 +137,7 @@ int luas_new_struct(lua_State *state, const char *name, const char *super_name, 
         return 0;
     }
 
-    LuasStruct *st = lua_newuserdata(state, sizeof(LuasStruct));
+    LuastructStruct *st = lua_newuserdata(state, sizeof(LuastructStruct));
     strncpy(st->type_info.name, name, LUASTRUCT_TYPENAME_LENGTH);
     st->type_info.name[strlen(st->type_info.name)] = '\0';
     st->type_info.type = LUAS_TYPE_STRUCT;
@@ -148,12 +148,12 @@ int luas_new_struct(lua_State *state, const char *name, const char *super_name, 
 
     int metatable = luaL_newmetatable(state, struct_metatable_name);
     if(metatable != 0) {
-        lua_pushcfunction(state, luas_struct__gc);
+        lua_pushcfunction(state, luastruct_struct__gc);
         lua_setfield(state, -2, "__gc");
     }
     lua_setmetatable(state, -2);
 
-    luas_get_types_registry(state);
+    luastruct_get_types_registry(state);
     lua_pushvalue(state, -2);
     lua_setfield(state, -2, st->type_info.name);
     lua_pop(state, 1);
@@ -161,18 +161,18 @@ int luas_new_struct(lua_State *state, const char *name, const char *super_name, 
     return 1;
 }
 
-LuasStruct *luas_check_struct(lua_State *state, int index) {
+LuastructStruct *luastruct_check_struct(lua_State *state, int index) {
     return luaL_checkudata(state, index, struct_metatable_name);
 }
 
-int luas_new_dynamic_array_type(lua_State *state, LuasType type, const char *type_name, lua_CFunction elements_count_getter, bool elements_are_pointers) {
+int luastruct_new_dynamic_array_type(lua_State *state, LuastructType type, const char *type_name, lua_CFunction elements_count_getter, bool elements_are_pointers) {
     char name[LUASTRUCT_TYPENAME_LENGTH];
     snprintf(name, sizeof(name), LUASTRUCT_DYNAMIC_ARRAY_NAME_FORMAT, type_name);
-    if(luas_get_type(state, name) != 0) {
+    if(luastruct_get_type(state, name) != 0) {
         return 1;
     }
 
-    LuasDynamicArray *da = lua_newuserdata(state, sizeof(LuasDynamicArray));
+    LuastructDynamicArray *da = lua_newuserdata(state, sizeof(LuastructDynamicArray));
     strncpy(da->type_info.name, name, LUASTRUCT_TYPENAME_LENGTH);
     da->type_info.name[strlen(da->type_info.name)] = '\0';
     da->type_info.type = LUAS_TYPE_DYNARRAY;
@@ -181,7 +181,7 @@ int luas_new_dynamic_array_type(lua_State *state, LuasType type, const char *typ
     da->elements_are_pointers = elements_are_pointers;
     da->count_getter = elements_count_getter;
 
-    luas_get_types_registry(state);
+    luastruct_get_types_registry(state);
     lua_pushvalue(state, -2);
     lua_setfield(state, -2, da->type_info.name);
     lua_pop(state, 1);
@@ -189,8 +189,8 @@ int luas_new_dynamic_array_type(lua_State *state, LuasType type, const char *typ
     return 1;
 }
 
-void luas_new_struct_field(lua_State *state, const char *name, LuasType type, const char *type_name, uint32_t offset, uint32_t count, bool pointer, bool readonly) {
-    LuasStruct *st = luas_check_struct(state, -1);
+void luastruct_new_struct_field(lua_State *state, const char *name, LuastructType type, const char *type_name, uint32_t offset, uint32_t count, bool pointer, bool readonly) {
+    LuastructStruct *st = luastruct_check_struct(state, -1);
     if(!st) {
         LUAS_DEBUG("Invalid struct object");
         return;
@@ -201,7 +201,7 @@ void luas_new_struct_field(lua_State *state, const char *name, LuasType type, co
         return;
     }
 
-    LuasStructField field;
+    LuastructStructField field;
     strncpy(field.field_name, name, LUASTRUCT_TYPENAME_LENGTH);
     field.field_name[strlen(field.field_name)] = '\0';
     field.type = type;
@@ -216,7 +216,7 @@ void luas_new_struct_field(lua_State *state, const char *name, LuasType type, co
             LUAS_DEBUG("Type name required for struct/enum field");
             return;
         }
-        luas_get_type(state, type_name);
+        luastruct_get_type(state, type_name);
         if(lua_isnil(state, -1)) {
             LUAS_DEBUG("Type not found: %s", type_name);
             return;
@@ -242,15 +242,15 @@ void luas_new_struct_dynamic_array_field(lua_State *state, const char *name, Lua
 
     char da_type_name[LUASTRUCT_TYPENAME_LENGTH];
     snprintf(da_type_name, sizeof(da_type_name), LUASTRUCT_DYNAMIC_ARRAY_NAME_FORMAT, type_name);
-    luas_get_type(state, da_type_name);
+    luastruct_get_type(state, da_type_name);
     if(lua_isnil(state, -1)) {
         LUAS_DEBUG("Dynamic array type not found: %s", da_type_name);
         return;
     }
-    LuasTypeInfo *da_type_info = lua_touserdata(state, -1);
+    LuastructTypeInfo *da_type_info = lua_touserdata(state, -1);
     lua_pop(state, 1);
 
-    LuasStructField field;
+    LuastructStructField field;
     strncpy(field.field_name, name, LUASTRUCT_TYPENAME_LENGTH);
     field.field_name[strlen(field.field_name)] = '\0';
     field.type = LUAS_TYPE_DYNARRAY;
@@ -264,7 +264,7 @@ void luas_new_struct_dynamic_array_field(lua_State *state, const char *name, Lua
     insert_struct_field(st, &field);
 }
 
-int luas_get_objects_registry(lua_State *state) {
+int luastruct_get_objects_registry(lua_State *state) {
     lua_getfield(state, LUA_REGISTRYINDEX, objects_registry_name);
     if(lua_isnil(state, -1)) {
         lua_pop(state, 1);
@@ -280,8 +280,8 @@ static void get_object_key(char *buffer, void *data, bool readonly) {
     snprintf(buffer, LUASTRUCT_TYPENAME_LENGTH, LUAS_OBJECT_KEY_FORMAT, data, readonly ? "readonly" : "readwrite");
 }
 
-int luas_get_object(lua_State *state, void *data, bool readonly) {
-    luas_get_objects_registry(state);
+int luastruct_get_object(lua_State *state, void *data, bool readonly) {
+    luastruct_get_objects_registry(state);
     char key[LUASTRUCT_TYPENAME_LENGTH];
     get_object_key(key, data, readonly);
     lua_getfield(state, -1, key);
@@ -293,17 +293,17 @@ int luas_get_object(lua_State *state, void *data, bool readonly) {
     return 1;
 }
 
-int luas_new_object(lua_State *state, const char *type_name, void *data, bool readonly) {
-    if(luas_get_type(state, type_name) == 0) {
+int luastruct_new_object(lua_State *state, const char *type_name, void *data, bool readonly) {
+    if(luastruct_get_type(state, type_name) == 0) {
         LUAS_DEBUG("Type not found: %s", type_name);
         return 0;
     }
-    LuasTypeInfo *type_info = lua_touserdata(state, -1);
+    LuastructTypeInfo *type_info = lua_touserdata(state, -1);
     lua_pop(state, 1);
 
-    if(luas_get_object(state, data, readonly) != 0) {
-        LuasObject *obj = lua_touserdata(state, -1);
-        LuasTypeInfo *obj_type_info = obj->type;
+    if(luastruct_get_object(state, data, readonly) != 0) {
+        LuastructObject *obj = lua_touserdata(state, -1);
+        LuastructTypeInfo *obj_type_info = obj->type;
         if(obj_type_info->type != type_info->type) {
             LUAS_DEBUG("An object of a different type already exists at this address");
             return 0;
@@ -312,7 +312,7 @@ int luas_new_object(lua_State *state, const char *type_name, void *data, bool re
         return 1;
     }
 
-    LuasObject *obj = lua_newuserdata(state, sizeof(LuasObject));
+    LuastructObject *obj = lua_newuserdata(state, sizeof(LuastructObject));
     obj->type = type_info;
     obj->invalid = false;
     obj->readonly = readonly;
@@ -323,11 +323,11 @@ int luas_new_object(lua_State *state, const char *type_name, void *data, bool re
     else {
         switch(type_info->type) {
             case LUAS_TYPE_STRUCT:
-                obj->data = malloc(((LuasStruct *)type_info)->size);
+                obj->data = malloc(((LuastructStruct *)type_info)->size);
                 obj->delete_on_gc = true;
                 break;
             case LUAS_TYPE_ENUM: {
-                switch(((LuasEnum *)type_info)->type) {
+                switch(((LuastructEnum *)type_info)->type) {
                     case LUAS_ENUM_INT8:
                         obj->data = malloc(sizeof(int8_t));
                         break;
@@ -354,7 +354,7 @@ int luas_new_object(lua_State *state, const char *type_name, void *data, bool re
     
     char object_key[LUASTRUCT_TYPENAME_LENGTH];
     get_object_key(object_key, data, readonly);
-    luas_get_objects_registry(state);
+    luastruct_get_objects_registry(state);
     lua_pushvalue(state, -2);
     lua_setfield(state, -2, object_key);
     lua_pop(state, 1);
@@ -362,8 +362,8 @@ int luas_new_object(lua_State *state, const char *type_name, void *data, bool re
     return 1;
 }
 
-int luas_object__gc(lua_State *state) {
-    LuasObject *obj = luaL_checkudata(state, 1, struct_metatable_name);
+int luastruct_object__gc(lua_State *state) {
+    LuastructObject *obj = luaL_checkudata(state, 1, struct_metatable_name);
     if(!obj) {
         LUAS_DEBUG("Invalid object");
         return 0;
@@ -374,16 +374,16 @@ int luas_object__gc(lua_State *state) {
     return 0;
 }
 
-int luas_object_struct__index(lua_State *state) {
-    LuasObject *obj = luaL_checkudata(state, 1, struct_metatable_name);
+int luastruct_object_struct__index(lua_State *state) {
+    LuastructObject *obj = luaL_checkudata(state, 1, struct_metatable_name);
     if(!obj || obj->invalid) {
         LUAS_DEBUG("Invalid object");
         return 0;
     }
 
     const char *field_name = luaL_checkstring(state, 2);
-    LuasStruct *st = obj->type;
-    LuasStructField *field = st->fields_by_name;
+    LuastructStruct *st = obj->type;
+    LuastructStructField *field = st->fields_by_name;
     while(field) {
         if(strcmp(field->field_name, field_name) == 0) {
             void *data = obj->data + field->offset;
@@ -422,7 +422,7 @@ int luas_object_struct__index(lua_State *state) {
                 case LUAS_TYPE_STRUCT:
                 case LUAS_TYPE_ENUM:
                 case LUAS_TYPE_DYNARRAY:
-                    luas_new_object(state, ((LuasTypeInfo *)field->type_info)->name, data, readonly);
+                    luastruct_new_object(state, ((LuastructTypeInfo *)field->type_info)->name, data, readonly);
                     break;
                 case LUAS_TYPE_BITFIELD: {
                     switch(field->bitfield.size) {
@@ -452,8 +452,8 @@ int luas_object_struct__index(lua_State *state) {
     return 1;
 }
 
-int luas_object_struct__newindex(lua_State *state) {
-    LuasObject *obj = luaL_checkudata(state, 1, struct_metatable_name);
+int luastruct_object_struct__newindex(lua_State *state) {
+    LuastructObject *obj = luaL_checkudata(state, 1, struct_metatable_name);
     if(!obj || obj->invalid) {
         LUAS_DEBUG("Invalid object");
         return 0;
@@ -464,8 +464,8 @@ int luas_object_struct__newindex(lua_State *state) {
     }
 
     const char *field_name = luaL_checkstring(state, 2);
-    LuasStruct *st = obj->type;
-    LuasStructField *field = st->fields_by_name;
+    LuastructStruct *st = obj->type;
+    LuastructStructField *field = st->fields_by_name;
     while(field) {
         if(strcmp(field->field_name, field_name) == 0) {
             if(field->readonly) {
@@ -502,8 +502,8 @@ int luas_object_struct__newindex(lua_State *state) {
                     *(bool *)(data) = lua_toboolean(state, 3);
                     break;
                 case LUAS_TYPE_STRUCT: {
-                    LuasObject *obj_to_copy = luaL_checkudata(state, 3, struct_metatable_name);
-                    LuasStruct *field_struct = field->type_info;
+                    LuastructObject *obj_to_copy = luaL_checkudata(state, 3, struct_metatable_name);
+                    LuastructStruct *field_struct = field->type_info;
                     if(!obj_to_copy || obj_to_copy->invalid) {
                         LUAS_DEBUG("Invalid object to copy");
                         break;
@@ -516,7 +516,7 @@ int luas_object_struct__newindex(lua_State *state) {
                     break;
                 }
                 case LUAS_TYPE_ENUM: {
-                    LuasEnum *enum_type = field->type_info;
+                    LuastructEnum *enum_type = field->type_info;
                     switch(enum_type->type) {
                         case LUAS_ENUM_INT8:
                             *(int8_t *)(data) = luaL_checkinteger(state, 3);

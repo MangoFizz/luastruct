@@ -17,7 +17,7 @@ extern "C" {
 #define STR2(s) # s
 #define STR(s) STR2(s)
 
-typedef enum LuasType {
+typedef enum LuastructType {
 	LUAS_TYPE_INT8,
 	LUAS_TYPE_INT16,
 	LUAS_TYPE_INT32,
@@ -36,31 +36,31 @@ typedef enum LuasType {
 	LUAS_TYPE_OBJREF,
 	LUAS_TYPE_EXTREF,
 	LUAS_TYPE_METHOD
-} LuasType;
+} LuastructType;
 
-typedef struct LuasTypeInfo {
-	LuasType type;
+typedef struct LuastructTypeInfo {
+	LuastructType type;
 	char name[LUASTRUCT_TYPENAME_LENGTH];
-} LuasTypeInfo;
+} LuastructTypeInfo;
 
-typedef struct LuasDynamicArray {
-	LuasTypeInfo type_info;
+typedef struct LuastructDynamicArray {
+	LuastructTypeInfo type_info;
 	lua_CFunction count_getter;
-	LuasType elements_type;
+	LuastructType elements_type;
 	void *elements_type_info;
 	bool elements_are_pointers;
-} LuasDynamicArray;
+} LuastructDynamicArray;
 
-typedef struct LuasStructField {
+typedef struct LuastructStructField {
 	char field_name[LUASTRUCT_TYPENAME_LENGTH];
-	LuasType type;
+	LuastructType type;
 	void *type_info;
 	uint32_t offset;
 	uint16_t count;
 	bool pointer;
 	bool readonly;
-	struct LuasStructField *next_by_offset;
-	struct LuasStructField *next_by_name;
+	struct LuastructStructField *next_by_offset;
+	struct LuastructStructField *next_by_name;
 	union {
 		struct {
 			uint8_t size;
@@ -70,50 +70,50 @@ typedef struct LuasStructField {
 			bool elements_are_readonly;
 		} dynamic_array;
 	};
-} LuasStructField;
+} LuastructStructField;
 
-typedef struct LuasStruct {
-	LuasTypeInfo type_info;
-	struct LuasStruct *super;
+typedef struct LuastructStruct {
+	LuastructTypeInfo type_info;
+	struct LuastructStruct *super;
 	size_t size;
-	LuasStructField *fields;
-	LuasStructField *fields_by_name;
-} LuasStruct;
+	LuastructStructField *fields;
+	LuastructStructField *fields_by_name;
+} LuastructStruct;
 
-typedef enum LuasEnumValueType {
+typedef enum LuastructEnumValueType {
 	LUAS_ENUM_INT8,
 	LUAS_ENUM_INT16,
 	LUAS_ENUM_INT32
-} LuasEnumValueType;
+} LuastructEnumValueType;
 
-typedef struct LuasEnumValue {
+typedef struct LuastructEnumValue {
 	char name[LUASTRUCT_TYPENAME_LENGTH];
 	intmax_t value;
-	struct LuasEnumValue *next_by_value;
-	struct LuasEnumValue *next_by_name;
-} LuasEnumValue;
+	struct LuastructEnumValue *next_by_value;
+	struct LuastructEnumValue *next_by_name;
+} LuastructEnumValue;
 
-typedef struct LuasEnum {
-	LuasTypeInfo type_info;
-	LuasEnumValueType type;
+typedef struct LuastructEnum {
+	LuastructTypeInfo type_info;
+	LuastructEnumValueType type;
 	intmax_t max_value;
-	LuasEnumValue *values_by_value;
-	LuasEnumValue *values_by_name;
-} LuasEnum;
+	LuastructEnumValue *values_by_value;
+	LuastructEnumValue *values_by_name;
+} LuastructEnum;
 
-typedef struct LuasObject {
+typedef struct LuastructObject {
 	void *type;
 	void *data;
 	bool readonly;
 	bool invalid;
 	bool delete_on_gc;
-} LuasObject;
+} LuastructObject;
 
 /**
  * Get the types registry.
  * @param state Lua state.
  */
-int luas_get_types_registry(lua_State *state);
+int luastruct_get_types_registry(lua_State *state);
 
 /**
  * Create a new struct type.
@@ -123,7 +123,7 @@ int luas_get_types_registry(lua_State *state);
  * @param size Size of the struct.
  * @return the number of values pushed onto the stack.
  */
-int luas_new_struct(lua_State *state, const char *name, const char *super_name, uint32_t size);
+int luastruct_new_struct(lua_State *state, const char *name, const char *super_name, uint32_t size);
 
 /**
  * Check if the object at the given index is a struct.
@@ -131,7 +131,7 @@ int luas_new_struct(lua_State *state, const char *name, const char *super_name, 
  * @param index Index of the object.
  * @return The struct object or NULL if the object is not a struct.
  */
-LuasStruct *luas_check_struct(lua_State *state, int index);
+LuastructStruct *luastruct_check_struct(lua_State *state, int index);
 
 /**
  * Create a new field in a struct.
@@ -156,7 +156,7 @@ void luas_new_struct_field(lua_State *state, const char *name, LuasType type, co
  * @param readonly Whether the field is read-only.
  * @param elements_are_readonly Whether the elements of the array are read-only.
  */
-void luas_new_struct_dynamic_array_field(lua_State *state, const char *name, LuasType type, const char *type_name, uint32_t offset, bool pointer, bool readonly, bool elements_are_readonly);
+void luastruct_new_struct_dynamic_array_field(lua_State *state, const char *name, LuastructType type, const char *type_name, uint32_t offset, bool pointer, bool readonly, bool elements_are_readonly);
 
 
 #ifdef __cplusplus

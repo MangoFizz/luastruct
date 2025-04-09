@@ -7,7 +7,7 @@
 #define COLUMN_WIDTH 64  
 #define TABLE_BORDER "+----------------------------------------------------------------+"
 
-const char *luasd_name_for_type(LuasType type) {
+const char *luastruct_name_for_type(LuastructType type) {
     switch(type) {
         case LUAS_TYPE_INT8:
             return "int8";
@@ -50,7 +50,7 @@ const char *luasd_name_for_type(LuasType type) {
     }
 }
 
-const char *luasd_type_for_bitfield(size_t size) {
+const char *luastruct_type_for_bitfield(size_t size) {
     switch(size) {
         case 1:
             return "uint8";
@@ -63,20 +63,20 @@ const char *luasd_type_for_bitfield(size_t size) {
     }
 }
 
-void luasd_print_registered_types(lua_State *state) {
+void luastruct_print_registered_types(lua_State *state) {
     printf("%s\n", TABLE_BORDER);
-    printf("| %-*s |\n", COLUMN_WIDTH - 2, "Registered Luastruct types");
+    printf("| %-*s |\n", COLUMN_WIDTH - 2, "Registered Luastructtruct types");
     printf("%s\n", TABLE_BORDER);
 
-    luas_get_types_registry(state);
+    luastruct_get_types_registry(state);
     lua_pushnil(state);
     while(lua_next(state, -2) != 0) {
         // key is at index -2 and value is at index -1
         const char *key = lua_tostring(state, -2);
-        LuasStruct *value = lua_touserdata(state, -1);
+        LuastructStruct *value = lua_touserdata(state, -1);
         
         char row[128];
-        const char *type_string = luasd_name_for_type(value->type_info.type);
+        const char *type_string = luastruct_name_for_type(value->type_info.type);
         if(value->super) {
             snprintf(row, sizeof(row), "%s %s extends %s", type_string, key, value->super->type_info.name);
         }
@@ -88,11 +88,11 @@ void luasd_print_registered_types(lua_State *state) {
     }
     lua_pop(state, 1);
 
-    printf("%s\n", TABLE_BORDER);
+    printf("%s\n\n", TABLE_BORDER);
 }
 
-void luasd_print_struct_fields(lua_State *state, const char *name) {
-    luas_get_types_registry(state);
+void luastruct_print_struct_definition(lua_State *state, const char *name) {
+    luastruct_get_types_registry(state);
     lua_getfield(state, -1, name);
     if(lua_isnil(state, -1)) {
         printf("Struct type not found: %s\n", name);
@@ -100,22 +100,22 @@ void luasd_print_struct_fields(lua_State *state, const char *name) {
         return;
     }
 
-    LuasStruct *st = lua_touserdata(state, -1);
+    LuastructStruct *st = lua_touserdata(state, -1);
     lua_pop(state, 2);
 
     printf("%s\n", TABLE_BORDER);
     printf("| %-*s |\n", COLUMN_WIDTH - 2, name);
     printf("%s\n", TABLE_BORDER);
 
-    LuasStructField *field = st->fields;
+    LuastructStructField *field = st->fields;
     while(field) {
-        const char *type = luasd_name_for_type(field->type);
+        const char *type = luastruct_name_for_type(field->type);
         if(field->type == LUAS_TYPE_BITFIELD) {
-            type = luasd_type_for_bitfield(field->bitfield.size);
+            type = luastruct_type_for_bitfield(field->bitfield.size);
         }
         else if(field->type == LUAS_TYPE_DYNARRAY) {
-            LuasDynamicArray *da = field->type_info;
-            type = luasd_type_for_bitfield(da->elements_type);
+            LuastructDynamicArray *da = field->type_info;
+            type = luastruct_type_for_bitfield(da->elements_type);
         }
 
         char buffer[32];
@@ -148,5 +148,5 @@ void luasd_print_struct_fields(lua_State *state, const char *name) {
         field = field->next_by_offset;
     }
 
-    printf("%s\n", TABLE_BORDER);
+    printf("%s\n\n", TABLE_BORDER);
 }
