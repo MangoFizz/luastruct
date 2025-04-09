@@ -155,7 +155,7 @@ void luas_new_struct_field(lua_State *state, const char *name, LuasType type, co
  * @param pointer Whether the field is a pointer.
  * @param readonly Whether the field is read-only.
  */
-void luas_new_struct_bit_field(lua_State *state, const char *name, LuasType type, uint32_t offset, uint32_t bit_offset, bool pointer, bool readonly);
+// void luas_new_struct_bit_field(lua_State *state, const char *name, LuasType type, uint32_t offset, uint32_t bit_offset, bool pointer, bool readonly);
 
 /**
  * Create a new dynamic array field in a struct.
@@ -168,18 +168,38 @@ void luas_new_struct_bit_field(lua_State *state, const char *name, LuasType type
  * @param readonly Whether the field is read-only.
  * @param elements_are_readonly Whether the elements of the array are read-only.
  */
-void luas_new_struct_dynamic_array_field(lua_State *state, const char *name, LuasType type, const char *type_name, uint32_t offset, bool pointer, bool readonly, bool elements_are_readonly);
+// void luas_new_struct_dynamic_array_field(lua_State *state, const char *name, LuasType type, const char *type_name, uint32_t offset, bool pointer, bool readonly, bool elements_are_readonly);
 
 /**
  * Create a new Luastruct struct.
  * @param state Lua state.
- * @param name Name of the struct.
- * @param super_name Name of the super struct.
+ * @param type Type of the struct.
  */
-#define LUASTRUCT_NEW_STRUCT(state, type, super_type) { \
-	struct type; \
-	struct super_type; \
+#define LUASTRUCT_NEW_STRUCT(state, type) { \
+	{ struct type; } \
+	luas_new_struct(state, #type, NULL, sizeof(struct type)); \
+}
+
+/**
+ * Create a new Luastruct struct.
+ * @param state Lua state.
+ * @param type Type of the struct.
+ * @param super_type Type of the super struct.
+ */
+#define LUASTRUCT_NEW_STRUCT_EXTENDS(state, type, super_type) { \
+	struct type *; \
+	struct super_type *; \
 	luas_new_struct(state, #type, #super_type, sizeof(struct type)); \
+}
+
+/**
+ * Create a new int field in a struct.
+ * @param state Lua state.
+ * @param type Type of the field.
+ * @param field Name Name of the field.
+ */
+#define LUASTRUCT_NEW_INT_FIELD(state, type, field) { \
+	
 }
 
 #ifdef __cplusplus

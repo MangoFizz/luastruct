@@ -4,12 +4,12 @@
 #include "luastruct.h"
 #include "debug.h"
 
-typedef struct {
+struct TestStruct {
     int a;
     float b;
     bool c;
     int8_t d;
-} TestStruct;
+};
 
 int count_getter(lua_State *state) {
     lua_pushinteger(state, 10);
@@ -23,7 +23,7 @@ int main(void) {
     LUASTRUCT_NEW_STRUCT(state, TestStruct);
 
     luasd_print_registered_types(state);
-    luasd_print_struct_fields(state, "TestStruct");
+    // luasd_print_struct_fields(state, "TestStruct");
 
     lua_close(state);
 
