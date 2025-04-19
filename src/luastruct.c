@@ -5,23 +5,18 @@
 #include <lauxlib.h>
 #include "luastruct.h"
 
+#define DEBUG
+
 #define LUAS_OBJECT_KEY_FORMAT "%.8X_%s"
 
 const char *objects_registry_name = "luastruct_objects";
 const char *types_registry_name = "luastruct_types";
 const char *struct_metatable_name = "luastruct_struct_metatable";
+const char *object_metatable_name = "luastruct_object";
 
-#define LUAS_DEBUG(...) \
+#define LUAS_DEBUG_MSG(...) \
     do { \
-        luaL_error(state, __FILE__ ":" STR(__LINE__) ": " __VA_ARGS__); \
-    } while(false)
-
-#define LUAS_ASSERT(expr) \
-    do { \
-        if(!(expr)) { \
-            LUAS_DEBUG("Assertion failed: %s", #expr); \
-            return false; \
-        } \
+        fprintf(stderr, __FILE__ ":" STR(__LINE__) ": " __VA_ARGS__); \
     } while(false)
 
 static void free_struct_fields_recursively(LuastructStructField *field) {
@@ -109,8 +104,7 @@ int luastruct_get_types_registry(lua_State *state) {
 int luastruct_struct__gc(lua_State *state) {
     LuastructStruct *st = luaL_checkudata(state, 1, struct_metatable_name);
     if(!st) {
-        LUAS_DEBUG("Invalid struct object");
-        return 0;
+        return luaL_error(state, "Invalid struct object");
     }
     if(st->fields) {
         free_struct_fields_recursively(st->fields);
@@ -126,15 +120,13 @@ int luastruct_new_struct(lua_State *state, const char *name, const char *super_n
     LuastructStruct *super = NULL;
     if(super_name) {
         if(luastruct_get_type(state, super_name) == 0) {
-            LUAS_DEBUG("Super struct type does not exist: %s", super_name);
-            return 0;
+            return luaL_error(state, "Super struct type does not exist: %s", super_name);
         }
         super = luaL_checkudata(state, -1, struct_metatable_name);
     }
 
     if(strlen(name) >= LUASTRUCT_TYPENAME_LENGTH) {
-        LUAS_DEBUG("Type name too long: %s", name);
-        return 0;
+        return luaL_error(state, "Type name too long: %s", name);
     }
 
     LuastructStruct *st = lua_newuserdata(state, sizeof(LuastructStruct));
@@ -192,13 +184,11 @@ int luastruct_new_dynamic_array_type(lua_State *state, LuastructType type, const
 void luastruct_new_struct_field(lua_State *state, const char *name, LuastructType type, const char *type_name, uint32_t offset, uint32_t count, bool pointer, bool readonly) {
     LuastructStruct *st = luastruct_check_struct(state, -1);
     if(!st) {
-        LUAS_DEBUG("Invalid struct object");
-        return;
+        luaL_error(state, "Invalid struct object");
     }
 
     if(strlen(name) >= LUASTRUCT_TYPENAME_LENGTH) {
-        LUAS_DEBUG("Field name too long: %s", name);
-        return;
+        luaL_error(state, "Field name too long: %s", name);
     }
 
     LuastructStructField field;
@@ -213,13 +203,11 @@ void luastruct_new_struct_field(lua_State *state, const char *name, LuastructTyp
 
     if(type == LUAS_TYPE_STRUCT || type == LUAS_TYPE_ENUM) {
         if(!type_name) {
-            LUAS_DEBUG("Type name required for struct/enum field");
-            return;
+            luaL_error(state, "Type name required for struct/enum field");
         }
         luastruct_get_type(state, type_name);
         if(lua_isnil(state, -1)) {
-            LUAS_DEBUG("Type not found: %s", type_name);
-            return;
+            luaL_error(state, "Type not found: %s", type_name);
         }
         field.type_info = lua_touserdata(state, -1);
         lua_pop(state, 1);
@@ -231,13 +219,11 @@ void luastruct_new_struct_field(lua_State *state, const char *name, LuastructTyp
 void luastruct_new_struct_bit_field(lua_State *state, const char *name, LuastructType type, uint32_t offset, uint32_t bit_offset, bool pointer, bool readonly) {
     LuastructStruct *st = luastruct_check_struct(state, -1);
     if(!st) {
-        LUAS_DEBUG("Invalid struct object");
-        return;
+        luaL_error(state, "Invalid struct object");
     }
 
     if(strlen(name) >= LUASTRUCT_TYPENAME_LENGTH) {
-        LUAS_DEBUG("Field name too long: %s", name);
-        return;
+        luaL_error(state, "Field name too long: %s", name);
     }
 
     uint32_t size = 0;
@@ -255,12 +241,10 @@ void luastruct_new_struct_bit_field(lua_State *state, const char *name, Luastruc
             size = 4;
             break;
         default:
-            LUAS_DEBUG("Invalid bitfield type: %d", type);
-            return;
+            luaL_error(state, "Invalid bitfield type: %d", type);
     }
     if(bit_offset >= size * 8) {
-        LUAS_DEBUG("Bit offset out of range: %d", bit_offset);
-        return;
+        luaL_error(state, "Bit offset out of range: %d", bit_offset);
     }
 
     LuastructStructField field;
@@ -281,21 +265,18 @@ void luastruct_new_struct_bit_field(lua_State *state, const char *name, Luastruc
 void luastruct_new_struct_dynamic_array_field(lua_State *state, const char *name, LuastructType type, const char *type_name, uint32_t offset, bool pointer, bool readonly, bool elements_are_readonly) {
     LuastructStruct *st = luastruct_check_struct(state, -1);
     if(!st) {
-        LUAS_DEBUG("Invalid struct object");
-        return;
+        luaL_error(state, "Invalid struct object");
     }
 
     if(strlen(name) >= LUASTRUCT_TYPENAME_LENGTH) {
-        LUAS_DEBUG("Field name too long: %s", name);
-        return;
+        luaL_error(state, "Field name too long: %s", name);
     }
 
     char da_type_name[LUASTRUCT_TYPENAME_LENGTH];
     snprintf(da_type_name, sizeof(da_type_name), LUASTRUCT_DYNAMIC_ARRAY_NAME_FORMAT, type_name);
     luastruct_get_type(state, da_type_name);
     if(lua_isnil(state, -1)) {
-        LUAS_DEBUG("Dynamic array type not found: %s", da_type_name);
-        return;
+        luaL_error(state, "Dynamic array type not found: %s", da_type_name);
     }
     LuastructTypeInfo *da_type_info = lua_touserdata(state, -1);
     lua_pop(state, 1);
@@ -322,6 +303,16 @@ int luastruct_get_objects_registry(lua_State *state) {
         lua_pushvalue(state, -1);
         lua_setfield(state, LUA_REGISTRYINDEX, objects_registry_name);
         lua_getfield(state, LUA_REGISTRYINDEX, objects_registry_name);
+
+        /**
+         * Set the metatable for the objects registry to allow weak references.
+         * This allows the Lua garbage collector to collect the objects
+         * when there are no strong references to them.
+         */
+        lua_newtable(state);
+        lua_pushstring(state, "v");
+        lua_setfield(state, -2, "__mode");
+        lua_setmetatable(state, -2);
     }
     return 1;
 }
@@ -343,80 +334,12 @@ int luastruct_get_object(lua_State *state, void *data, bool readonly) {
     return 1;
 }
 
-int luastruct_new_object(lua_State *state, const char *type_name, void *data, bool readonly) {
-    if(luastruct_get_type(state, type_name) == 0) {
-        LUAS_DEBUG("Type not found: %s", type_name);
-        return 0;
-    }
-    LuastructTypeInfo *type_info = lua_touserdata(state, -1);
-    lua_pop(state, 1);
-
-    if(luastruct_get_object(state, data, readonly) != 0) {
-        LuastructObject *obj = lua_touserdata(state, -1);
-        LuastructTypeInfo *obj_type_info = obj->type;
-        if(obj_type_info->type != type_info->type) {
-            LUAS_DEBUG("An object of a different type already exists at this address");
-            return 0;
-        }
-        obj->invalid = false;
-        return 1;
-    }
-
-    LuastructObject *obj = lua_newuserdata(state, sizeof(LuastructObject));
-    obj->type = type_info;
-    obj->invalid = false;
-    obj->readonly = readonly;
-    if(data) {
-        obj->data = data;
-        obj->delete_on_gc = false;
-    }
-    else {
-        switch(type_info->type) {
-            case LUAS_TYPE_STRUCT:
-                obj->data = malloc(((LuastructStruct *)type_info)->size);
-                obj->delete_on_gc = true;
-                break;
-            case LUAS_TYPE_ENUM: {
-                switch(((LuastructEnum *)type_info)->type) {
-                    case LUAS_ENUM_INT8:
-                        obj->data = malloc(sizeof(int8_t));
-                        break;
-                    case LUAS_ENUM_INT16:
-                        obj->data = malloc(sizeof(int16_t));
-                        break;
-                    case LUAS_ENUM_INT32:
-                        obj->data = malloc(sizeof(int32_t));
-                        break;
-                    default:
-                        LUAS_DEBUG("Invalid enum type");
-                        return 0;
-                }
-                break;
-            }
-            case LUAS_TYPE_DYNARRAY:
-                LUAS_DEBUG("Dynamic array objects cannot be created without existing data");
-                return 0;
-            default:
-                LUAS_DEBUG("Invalid object type");
-                return 0;
-        }
-    }
-    
-    char object_key[LUASTRUCT_TYPENAME_LENGTH];
-    get_object_key(object_key, data, readonly);
-    luastruct_get_objects_registry(state);
-    lua_pushvalue(state, -2);
-    lua_setfield(state, -2, object_key);
-    lua_pop(state, 1);
-
-    return 1;
-}
-
 int luastruct_object__gc(lua_State *state) {
-    LuastructObject *obj = luaL_checkudata(state, 1, struct_metatable_name);
+    LuastructObject *obj = luaL_checkudata(state, 1, object_metatable_name);
+    LuastructTypeInfo *type_info = obj->type;
+    LUAS_DEBUG_MSG("Collecting object 0x%.8X of type \"%s\"\n", obj->data, type_info->name);
     if(!obj) {
-        LUAS_DEBUG("Invalid object");
-        return 0;
+        return luaL_error(state, "Object is NULL in __gc method");
     }
     if(obj->delete_on_gc) {
         free(obj->data);
@@ -424,15 +347,17 @@ int luastruct_object__gc(lua_State *state) {
     return 0;
 }
 
-int luastruct_object_struct__index(lua_State *state) {
-    LuastructObject *obj = luaL_checkudata(state, 1, struct_metatable_name);
+int luastruct_object__index(lua_State *state) {
+    LuastructObject *obj = luaL_checkudata(state, 1, object_metatable_name);
+    
     if(!obj || obj->invalid) {
-        LUAS_DEBUG("Invalid object");
-        return 0;
+        return luaL_error(state, "Object is invalid in __index method");
     }
 
     const char *field_name = luaL_checkstring(state, 2);
     LuastructStruct *st = obj->type;
+    LUAS_DEBUG_MSG("Accessing field \"%s\" of struct at 0x%.8X (%s) of type \"%s\"\n", field_name, obj->data, obj->readonly ? "ro" : "rw", st->type_info.name);
+    
     LuastructStructField *field = st->fields_by_name;
     while(field) {
         if(strcmp(field->field_name, field_name) == 0) {
@@ -486,14 +411,12 @@ int luastruct_object_struct__index(lua_State *state) {
                             lua_pushinteger(state, (*(uint32_t *)(data) >> field->bitfield.offset) & 1);
                             break;
                         default:
-                            LUAS_DEBUG("Invalid bitfield size: %d", field->bitfield.size);
-                            break;
+                            return luaL_error(state, "Invalid bitfield size: %d", field->bitfield.size);
                     }
                     break;
                 }
                 default:
-                    LUAS_DEBUG("Unknown field type: %d", field->type);
-                    break;
+                    return luaL_error(state, "Unknown field type: %d", field->type);
             }
             break;
         }
@@ -502,25 +425,25 @@ int luastruct_object_struct__index(lua_State *state) {
     return 1;
 }
 
-int luastruct_object_struct__newindex(lua_State *state) {
-    LuastructObject *obj = luaL_checkudata(state, 1, struct_metatable_name);
+int luastruct_object__newindex(lua_State *state) {
+    LuastructObject *obj = luaL_checkudata(state, 1, object_metatable_name);
+    
     if(!obj || obj->invalid) {
-        LUAS_DEBUG("Invalid object");
-        return 0;
+        return luaL_error(state, "Object is invalid in __newindex method");
     }
     if(obj->readonly) {
-        LUAS_DEBUG("Object is read-only");
-        return 0;
+        return luaL_error(state, "Object is read-only in __newindex method");
     }
 
     const char *field_name = luaL_checkstring(state, 2);
     LuastructStruct *st = obj->type;
+    LUAS_DEBUG_MSG("Setting field \"%s\" of struct at 0x%.8X (%s) of type \"%s\"\n", field_name, obj->data, obj->readonly ? "ro" : "rw", st->type_info.name);
+
     LuastructStructField *field = st->fields_by_name;
     while(field) {
         if(strcmp(field->field_name, field_name) == 0) {
             if(field->readonly) {
-                LUAS_DEBUG("Field is read-only");
-                return 0;
+                return luaL_error(state, "Field is read-only: %s", field_name);
             }
             void *data = obj->data + field->offset;
             if(field->pointer) {
@@ -555,12 +478,12 @@ int luastruct_object_struct__newindex(lua_State *state) {
                     LuastructObject *obj_to_copy = luaL_checkudata(state, 3, struct_metatable_name);
                     LuastructStruct *field_struct = field->type_info;
                     if(!obj_to_copy || obj_to_copy->invalid) {
-                        LUAS_DEBUG("Invalid object to copy");
-                        break;
+                        return luaL_error(state, "Object to copy is invalid");
                     }
                     if(obj_to_copy->type != field->type_info) {
-                        LUAS_DEBUG("Invalid object type to copy");
-                        break;
+                        LuastructTypeInfo *obj_type_info = obj_to_copy->type;
+                        LuastructTypeInfo *field_type_info = field->type_info;
+                        return luaL_error(state, "Invalid object type to copy: %s != %s", obj_type_info->name, field_type_info->name);
                     }
                     memcpy(data, obj_to_copy->data, field_struct->size);
                     break;
@@ -578,8 +501,7 @@ int luastruct_object_struct__newindex(lua_State *state) {
                             *(int32_t *)(data) = luaL_checkinteger(state, 3);
                             break;
                         default:
-                            LUAS_DEBUG("Invalid enum type");
-                            break;
+                            return luaL_error(state, "Invalid enum type");
                     }
                     break;
                 }
@@ -598,17 +520,104 @@ int luastruct_object_struct__newindex(lua_State *state) {
                             *(uint32_t *)(data) = (*(uint32_t *)(data) & ~(1 << field->bitfield.offset)) | (lua_toboolean(state, 3) << field->bitfield.offset);
                             break;
                         default:
-                            LUAS_DEBUG("Invalid bitfield size: %d", field->bitfield.size);
-                            break;
+                            return luaL_error(state, "Invalid bitfield size: %d", field->bitfield.size);
                     }
                     break;
                 }
                 default:
-                    LUAS_DEBUG("Unknown field type: %d", field->type);
-                    break;
+                    return luaL_error(state, "Unknown field type: %d", field->type);
             }
         }
         field = field->next_by_name;
     }
     return 0;
+}
+
+static const struct luaL_Reg luastruct_object_metatable_methods[] = {
+    {"__gc", luastruct_object__gc},
+    {"__index", luastruct_object__index},
+    {"__newindex", luastruct_object__newindex},
+    {NULL, NULL}
+};
+
+int luastruct_new_object(lua_State *state, const char *type_name, void *data, bool readonly) {
+    if(luastruct_get_type(state, type_name) == 0) {
+        return luaL_error(state, "Type not found: %s", type_name);
+    }
+    LuastructTypeInfo *type_info = lua_touserdata(state, -1);
+    lua_pop(state, 1);
+
+    if(type_info->type != LUAS_TYPE_STRUCT && type_info->type != LUAS_TYPE_ENUM) {
+        return luaL_error(state, "Invalid type for object: %s", type_name);
+    }
+
+    if(luastruct_get_object(state, data, readonly) != 0) {
+        LuastructObject *obj = lua_touserdata(state, -1);
+        LuastructTypeInfo *obj_type_info = obj->type;
+        if(!obj->invalid) {
+            if(obj_type_info->type != type_info->type) {
+                return luaL_error(state, "An object of a different type already exists at this address: %s != %s", obj_type_info->name, type_info->name);
+            }
+            LUAS_DEBUG_MSG("Using existing object of type \"%s\" at 0x%.8X (%s)\n", obj_type_info->name, data, readonly ? "ro" : "rw");
+            return 1;
+        }
+    }
+
+    LUAS_DEBUG_MSG("Creating object of type \"%s\" at 0x%.8X (%s)\n", type_name, data, readonly ? "ro" : "rw");
+
+    LuastructObject *obj = lua_newuserdata(state, sizeof(LuastructObject));
+    obj->type = type_info;
+    obj->invalid = false;
+    obj->readonly = readonly;
+    if(data) {
+        obj->data = data;
+        obj->delete_on_gc = false;
+    }
+    else {
+        obj->delete_on_gc = true;
+        switch(type_info->type) {
+            case LUAS_TYPE_STRUCT:
+                obj->data = malloc(((LuastructStruct *)type_info)->size);
+                break;
+            case LUAS_TYPE_ENUM: {
+                LuastructEnum *enum_type = (LuastructEnum *)type_info;
+                switch(enum_type->type) {
+                    case LUAS_ENUM_INT8:
+                        obj->data = malloc(sizeof(int8_t));
+                        break;
+                    case LUAS_ENUM_INT16:
+                        obj->data = malloc(sizeof(int16_t));
+                        break;
+                    case LUAS_ENUM_INT32:
+                        obj->data = malloc(sizeof(int32_t));
+                        break;
+                    default:
+                        return luaL_error(state, "Invalid enum type");
+                }
+                break;
+            }
+            case LUAS_TYPE_DYNARRAY:
+                return luaL_error(state, "Dynamic array objects cannot be created without existing data");
+            default:
+                return luaL_error(state, "Invalid type for object: %s", type_name);
+        }
+    }
+
+    if(!obj->data) {
+        return luaL_error(state, "Failed to allocate memory for object");
+    }
+
+    if(luaL_newmetatable(state, object_metatable_name) != 0) {
+        luaL_setfuncs(state, luastruct_object_metatable_methods, 0);
+    }
+    lua_setmetatable(state, -2);
+    
+    char object_key[LUASTRUCT_TYPENAME_LENGTH];
+    get_object_key(object_key, data, readonly);
+    luastruct_get_objects_registry(state);
+    lua_pushvalue(state, -2);
+    lua_setfield(state, -2, object_key);
+    lua_pop(state, 1);
+
+    return 1;
 }

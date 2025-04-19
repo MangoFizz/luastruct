@@ -1,3 +1,12 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
+/**
+ * debug.h
+ * This header file contains functions and helpers used for debugging LuaStruct 
+ * types and general Lua state operations. All of this functions have no return 
+ * value, the output of the operations are printed to stdout.
+ */
+
 #ifndef LUASTRUCT_DEBUG_H
 #define LUASTRUCT_DEBUG_H
 
@@ -20,6 +29,22 @@ void luastruct_print_registered_types(lua_State *state);
  * @param name Name of the struct type.
  */
 void luastruct_print_struct_definition(lua_State *state, const char *name);
+
+/**
+ * Loads and executes a Lua script file into the given Lua state.
+ * @param state A pointer to the Lua state where the script will be loaded.
+ * @param filename The path to the Lua script file to be loaded.
+ */
+void luastruct_load_lua_script(lua_State *state, const char *filename);
+
+/**
+ * Calls a Lua function with the given name and number of arguments.
+ * @note This function does not handle the return value of the Lua function.
+ * @param state A pointer to the Lua state where the function is defined.
+ * @param function_name The name of the Lua function to be called.
+ * @param n_args The number of arguments to pass to the function.
+ */
+void luastruct_call_lua_function(lua_State *state, const char *function_name, int n_args);
 
 #ifdef __cplusplus
 }

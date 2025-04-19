@@ -107,6 +107,7 @@ typedef struct LuastructObject {
 	bool readonly;
 	bool invalid;
 	bool delete_on_gc;
+	int lua_ref; // reference for the object in Lua registry
 } LuastructObject;
 
 /**

@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <lua.h>
+#include <lauxlib.h>
 #include "debug.h"
 #include "luastruct.h"
 
@@ -149,4 +154,29 @@ void luastruct_print_struct_definition(lua_State *state, const char *name) {
     }
 
     printf("%s\n\n", TABLE_BORDER);
+}
+
+void luastruct_load_lua_script(lua_State *state, const char *filename) {
+    if(luaL_loadfile(state, filename) != LUA_OK || lua_pcall(state, 0, 0, 0)  != LUA_OK) {
+        fprintf(stderr, "Error: %s\n", lua_tostring(state, -1));
+        lua_pop(state, 1); // remove error message from stack
+    }
+}
+
+void luastruct_call_lua_function(lua_State *state, const char *function_name, int n_args) {
+    lua_getglobal(state, function_name);
+    if(lua_isfunction(state, -1)) {
+        for(int i = 0; i < n_args; i++) {
+            lua_pushvalue(state, -2 - i);
+        }
+        int res = lua_pcall(state, n_args, 0, 0);
+        if(res != LUA_OK) {
+            fprintf(stderr, "Error: %s\n", lua_tostring(state, -1));
+            lua_pop(state, 1); 
+        }
+    } 
+    else {
+        fprintf(stderr, "Error: %s is not a function\n", function_name);
+    }
+    lua_pop(state, 1);
 }
