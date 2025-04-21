@@ -22,102 +22,31 @@ void teardown(void) {
     state = NULL;
 }
 
-START_TEST(test_index_int32_min) {
-    test_struct.int32 = INT32_MIN;
-    lua_getfield(state, -1, "int32");
-    int32_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, INT32_MIN);
-    lua_pop(state, 1);
-}
-END_TEST
+#define TEST_INDEX_INT(type, min_val, max_val)                               \
+    START_TEST(test_index_##type##_min) {                                    \
+        test_struct.type = min_val;                                          \
+        lua_getfield(state, -1, #type);                                      \
+        type##_t value = luaL_checkinteger(state, -1);                       \
+        ck_assert_int_eq(value, min_val);                                    \
+        lua_pop(state, 1);                                                   \
+    }                                                                        \
+    END_TEST                                                                 \
+                                                                             \
+    START_TEST(test_index_##type##_max) {                                    \
+        test_struct.type = max_val;                                          \
+        lua_getfield(state, -1, #type);                                      \
+        type##_t value = luaL_checkinteger(state, -1);                       \
+        ck_assert_int_eq(value, max_val);                                    \
+        lua_pop(state, 1);                                                   \
+    }                                                                        \
+    END_TEST
 
-START_TEST(test_index_int32_max) {
-    test_struct.int32 = INT32_MAX;
-    lua_getfield(state, -1, "int32");
-    int32_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, INT32_MAX);
-    lua_pop(state, 1);
-}
-
-START_TEST(test_index_int16_min) {
-    test_struct.int16 = INT16_MIN;
-    lua_getfield(state, -1, "int16");
-    int16_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, INT16_MIN);
-    lua_pop(state, 1);
-}
-
-START_TEST(test_index_int16_max) {
-    test_struct.int16 = INT16_MAX;
-    lua_getfield(state, -1, "int16");
-    int16_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, INT16_MAX);
-    lua_pop(state, 1);
-}
-
-START_TEST(test_index_int8_min) {
-    test_struct.int8 = INT8_MIN;
-    lua_getfield(state, -1, "int8");
-    int8_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, INT8_MIN);
-    lua_pop(state, 1);
-}
-
-START_TEST(test_index_int8_max) {
-    test_struct.int8 = INT8_MAX;
-    lua_getfield(state, -1, "int8");
-    int8_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, INT8_MAX);
-    lua_pop(state, 1);
-}
-
-START_TEST(test_index_uint32_min) {
-    test_struct.uint32 = 0;
-    lua_getfield(state, -1, "uint32");
-    uint32_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, 0);
-    lua_pop(state, 1);
-}
-
-START_TEST(test_index_uint32_max) {
-    test_struct.uint32 = UINT32_MAX;
-    lua_getfield(state, -1, "uint32");
-    uint32_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, UINT32_MAX);
-    lua_pop(state, 1);
-}
-
-START_TEST(test_index_uint16_min) {
-    test_struct.uint16 = 0;
-    lua_getfield(state, -1, "uint16");
-    uint16_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, 0);
-    lua_pop(state, 1);
-}
-
-START_TEST(test_index_uint16_max) {
-    test_struct.uint16 = UINT16_MAX;
-    lua_getfield(state, -1, "uint16");
-    uint16_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, UINT16_MAX);
-    lua_pop(state, 1);
-}
-
-START_TEST(test_index_uint8_min) {
-    test_struct.uint8 = 0;
-    lua_getfield(state, -1, "uint8");
-    uint8_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, 0);
-    lua_pop(state, 1);
-}
-
-START_TEST(test_index_uint8_max) {
-    test_struct.uint8 = UINT8_MAX;
-    lua_getfield(state, -1, "uint8");
-    uint8_t value = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(value, UINT8_MAX);
-    lua_pop(state, 1);
-}
+TEST_INDEX_INT(int32, INT32_MIN, INT32_MAX)
+TEST_INDEX_INT(int16, INT16_MIN, INT16_MAX)
+TEST_INDEX_INT(int8, INT8_MIN, INT8_MAX)
+TEST_INDEX_INT(uint32, 0, UINT32_MAX)
+TEST_INDEX_INT(uint16, 0, UINT16_MAX)
+TEST_INDEX_INT(uint8, 0, UINT8_MAX)
 
 START_TEST(test_index_float_precision) {
     float highPrecisionFloat = 3.14159265358979323846f;
@@ -127,6 +56,7 @@ START_TEST(test_index_float_precision) {
     ck_assert_float_eq(value, highPrecisionFloat);
     lua_pop(state, 1);
 }
+END_TEST
 
 START_TEST(test_index_boolean) {
     lua_getfield(state, -1, "boolean");
@@ -159,6 +89,7 @@ START_TEST(test_index_object_field) {
     ck_assert_int_eq(value, 42);
     lua_pop(state, 2);
 }
+END_TEST
 
 Suite *create_suite(void) {
     Suite *s = suite_create("object_index_metamethod");
