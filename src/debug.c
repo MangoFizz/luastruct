@@ -14,41 +14,39 @@
 
 const char *luastruct_name_for_type(LuastructType type) {
     switch(type) {
-        case LUAS_TYPE_INT8:
+        case LUAST_INT8:
             return "int8";
-        case LUAS_TYPE_INT16:
+        case LUAST_INT16:
             return "int16";
-        case LUAS_TYPE_INT32:
+        case LUAST_INT32:
             return "int32";
-        case LUAS_TYPE_INT64:
+        case LUAST_INT64:
             return "int64";
-        case LUAS_TYPE_UINT8:
+        case LUAST_UINT8:
             return "uint8";
-        case LUAS_TYPE_UINT16:
+        case LUAST_UINT16:
             return "uint16";
-        case LUAS_TYPE_UINT32:
+        case LUAST_UINT32:
             return "uint32";
-        case LUAS_TYPE_UINT64:
+        case LUAST_UINT64:
             return "uint64";
-        case LUAS_TYPE_FLOAT:
+        case LUAST_FLOAT:
             return "float";
-        case LUAS_TYPE_BOOL:
+        case LUAST_BOOL:
             return "bool";
-        case LUAS_TYPE_STRING:
+        case LUAST_STRING:
             return "string";
-        case LUAS_TYPE_STRUCT:
+        case LUAST_STRUCT:
             return "struct";
-        case LUAS_TYPE_ENUM:
+        case LUAST_ENUM:
             return "enum";
-        case LUAS_TYPE_BITFIELD:
+        case LUAST_BITFIELD:
             return "bitfield";
-        case LUAS_TYPE_DYNARRAY:
-            return "dynarray";
-        case LUAS_TYPE_OBJREF:
-            return "objref";
-        case LUAS_TYPE_EXTREF:
+        case LUAST_ARRAY:
+            return "array";
+        case LUAST_EXTREF:
             return "extref";
-        case LUAS_TYPE_METHOD:
+        case LUAST_METHOD:
             return "method";
         default:
             return "unknown";
@@ -115,12 +113,12 @@ void luastruct_print_struct_definition(lua_State *state, const char *name) {
     LuastructStructField *field = st->fields;
     while(field) {
         const char *type = luastruct_name_for_type(field->type);
-        if(field->type == LUAS_TYPE_BITFIELD) {
+        if(field->type == LUAST_BITFIELD) {
             type = luastruct_type_for_bitfield(field->bitfield.size);
         }
-        else if(field->type == LUAS_TYPE_DYNARRAY) {
-            LuastructDynamicArray *da = field->type_info;
-            type = luastruct_type_for_bitfield(da->elements_type);
+        else if(field->type == LUAST_ARRAY) {
+            LuastructArrayDesc *array = &field->array;
+            type = luastruct_name_for_type(array->elements_type);
         }
 
         char buffer[32];
@@ -137,14 +135,11 @@ void luastruct_print_struct_definition(lua_State *state, const char *name) {
             strcat(row, "*");
         }
         strcat(row, field->field_name);
-        if(field->count > 0) {
-            sprintf(buffer, "[%d]", field->count);
+        if(field->type == LUAST_ARRAY) {
+            sprintf(buffer, "[%d]", field->array.array_size);
             strcat(row, buffer);
         }
-        if(field->type == LUAS_TYPE_DYNARRAY) {
-            strcat(row, "[]");
-        }
-        if(field->type == LUAS_TYPE_BITFIELD) {
+        if(field->type == LUAST_BITFIELD) {
             sprintf(buffer, " : 1");
             strcat(row, buffer);
         }

@@ -3,7 +3,7 @@
 /**
  * debug.h
  * This header file contains functions and helpers used for debugging LuaStruct 
- * types and general Lua state operations. All of this functions have no return 
+ * types and general Lua state operations. Most of this functions have no return 
  * value, the output of the operations are printed to stdout.
  */
 
@@ -16,6 +16,29 @@
 #include <lua.hpp>
 extern "C" {
 #endif
+
+#include "luastruct.h"
+
+#define STR2(s) # s
+#define STR(s) STR2(s)
+
+#ifdef DEBUG
+#define LUAS_DEBUG_MSG(...) \
+    do { \
+        fprintf(stderr, __FILE__ ":" STR(__LINE__) ": " __VA_ARGS__); \
+    } while(false)
+#else
+#define LUAS_DEBUG_MSG(...) \
+    do { \
+    } while(false)
+#endif
+
+/**
+ * Retrieves the name of a Luastruct type as a string.
+ * @param type The LuastructType value for which the name is to be retrieved.
+ * @return A constant string representing the name of the specified LuastructType.
+ */
+const char *luastruct_name_for_type(LuastructType type);
 
 /**
  * Print to stdout the registered types in the Lua state.

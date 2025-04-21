@@ -3,43 +3,65 @@
 
 #include "luastruct.h"
 
-#define LUASTRUCT_STRUCT_FIELD(type, field) (((struct type *)NULL)->field)
+enum {
+	LUAS_FIELD_READONLY = 0x01,
+	LUAS_FIELD_POINTER = 0x02
+};
 
-#define LUASTRUCT_NEW_STRUCT(state, type) { \
+#define LUAS_STRUCT_FIELD(type, field) (((struct type *)NULL)->field)
+#define LUAS_SIZEOF_ARRAY(type, field) (sizeof(((struct type *)NULL)->field) / sizeof(((struct type *)NULL)->field[0]))
+
+#define LUAS_STRUCT(state, type) { \
 	{ struct type; } \
 	luastruct_new_struct(state, #type, NULL, sizeof(struct type)); \
 }
 
-#define LUASTRUCT_NEW_STRUCT_EXTENDS(state, type, super_type) { \
-	struct type *; \
-	struct super_type *; \
+#define LUAS_STRUCT_EXTENDS(state, type, super_type) { \
+	{ struct type; } \
+	{ struct super_type; } \
 	luastruct_new_struct(state, #type, #super_type, sizeof(struct type)); \
 }
 
-#define LUASTRUCT_NEW_INT_FIELD(state, type, field, read_only) { \
+#define LUAS_PRIMITIVE_FIELD(state, type, field, field_type, flags) { \
 	{ struct type; } \
-	LuastructType int_type; \
-	switch(sizeof(LUASTRUCT_STRUCT_FIELD(type, field))) { \
-		case 1: int_type = LUAS_TYPE_INT8; break; \
-		case 2: int_type = LUAS_TYPE_INT16; break; \
-		case 4: int_type = LUAS_TYPE_INT32; break; \
-		case 8: int_type = LUAS_TYPE_INT64; break; \
-		default: int_type = LUAS_TYPE_INT32; break; \
-	} \
-	luastruct_new_struct_field(state, #field, int_type, NULL, offsetof(struct type, field), 0, false, read_only); \
+	luastruct_new_struct_field(state, #field, field_type, NULL, offsetof(struct type, field), flags & LUAS_FIELD_POINTER, flags & LUAS_FIELD_READONLY); \
 }
 
-#define LUASTRUCT_NEW_FLOAT_FIELD(state, type, field, read_only) { \
+#define LUAS_PRIMITIVE_ARRAY_FIELD(state, type, field, elements_type, elements_flags) { \
 	{ struct type; } \
-	luastruct_new_struct_field(state, #field, LUAS_TYPE_FLOAT, NULL, offsetof(struct type, field), 0, false, read_only); \
+	LuastructArrayDesc array_desc; \
+	luastruct_new_static_array_desc(state, elements_type, NULL, LUAS_SIZEOF_ARRAY(type, field), elements_flags & LUAS_FIELD_POINTER, elements_flags & LUAS_FIELD_READONLY, &array_desc); \
+	luastruct_new_struct_array_field(state, #field, &array_desc, offsetof(struct type, field), false, false); \
 }
 
-#define LUASTRUCT_NEW_BOOL_FIELD(state, type, field, read_only) { \
+#define LUAS_PRIMITIVE_DYNAMIC_ARRAY_FIELD(state, type, field, array_size_counter, elements_type, elements_flags) { \
 	{ struct type; } \
-	luastruct_new_struct_field(state, #field, LUAS_TYPE_BOOL, NULL, offsetof(struct type, field), 0, false, read_only); \
+	LuastructArrayDesc array_desc; \
+	luastruct_new_dynamic_array_desc(state, elements_type, NULL, array_size_counter, elements_flags & LUAS_FIELD_POINTER, elements_flags & LUAS_FIELD_READONLY, &array_desc); \
+	luastruct_new_struct_array_field(state, #field, &array_desc, offsetof(struct type, field), true, false); \
 }
 
-#define LUASTRUCT_NEW_OBJECT(state, type, data, read_only) { \
+#define LUAS_OBJREF_FIELD(state, type, field, field_type, flags) { \
+	{ struct type; } \
+	{ struct field_type; } \
+	luastruct_new_struct_field(state, #field, LUAST_STRUCT, #field_type, offsetof(struct type, field), flags & LUAS_FIELD_POINTER, flags & LUAS_FIELD_READONLY); \
+}
+
+#define LUAS_OBJREF_ARRAY_FIELD(state, type, field, elements_type, elements_flags) { \
+	{ struct type; } \
+	LuastructArrayDesc array_desc; \
+	luastruct_new_static_array_desc(state, LUAST_STRUCT, #elements_type, LUAS_SIZEOF_ARRAY(type, field), elements_flags & LUAS_FIELD_POINTER, elements_flags & LUAS_FIELD_READONLY, &array_desc); \
+	luastruct_new_struct_array_field(state, #field, &array_desc, offsetof(struct type, field), false, false); \
+}
+
+#define LUAS_OBJREF_DYNAMIC_ARRAY_FIELD(state, type, field, array_size_counter, elements_type, elements_flags) { \
+	{ struct type; } \
+	LuastructArrayDesc array_desc; \
+	luastruct_new_dynamic_array_desc(state, LUAST_STRUCT, #elements_type, array_size_counter, elements_flags & LUAS_FIELD_POINTER, elements_flags & LUAS_FIELD_READONLY, &array_desc); \
+	luastruct_new_struct_array_field(state, #field, &array_desc, offsetof(struct type, field), true, false); \
+}
+
+#define LUAS_OBJECT(state, type, data, read_only) { \
 	{ struct type; } \
 	luastruct_new_object(state, #type, (void *)data, read_only); \
 }

@@ -12,30 +12,28 @@ extern "C" {
 #include <stdbool.h>
 
 #define LUASTRUCT_TYPENAME_LENGTH 64
-#define LUASTRUCT_DYNAMIC_ARRAY_NAME_FORMAT "DynamicArray_%s"
 
-#define STR2(s) # s
-#define STR(s) STR2(s)
+static const char *STRUCT_METATABLE_NAME = "luastruct_struct";
 
 typedef enum LuastructType {
-	LUAS_TYPE_INT8,
-	LUAS_TYPE_INT16,
-	LUAS_TYPE_INT32,
-	LUAS_TYPE_INT64,
-	LUAS_TYPE_UINT8,
-	LUAS_TYPE_UINT16,
-	LUAS_TYPE_UINT32,
-	LUAS_TYPE_UINT64,
-	LUAS_TYPE_FLOAT,
-	LUAS_TYPE_BOOL,
-	LUAS_TYPE_STRING,
-	LUAS_TYPE_STRUCT,
-	LUAS_TYPE_ENUM,
-	LUAS_TYPE_BITFIELD,
-	LUAS_TYPE_DYNARRAY,
-	LUAS_TYPE_OBJREF,
-	LUAS_TYPE_EXTREF,
-	LUAS_TYPE_METHOD
+	LUAST_STRUCT,
+	LUAST_ENUM,
+	LUAST_INT8,
+	LUAST_INT16,
+	LUAST_INT32,
+	LUAST_INT64,
+	LUAST_UINT8,
+	LUAST_UINT16,
+	LUAST_UINT32,
+	LUAST_UINT64,
+	LUAST_FLOAT,
+	LUAST_BOOL,
+	LUAST_STRING,
+	LUAST_BITFIELD,
+	LUAST_EXTREF,
+	LUAST_OBJREF,
+	LUAST_ARRAY,
+	LUAST_METHOD
 } LuastructType;
 
 typedef struct LuastructTypeInfo {
@@ -43,20 +41,35 @@ typedef struct LuastructTypeInfo {
 	char name[LUASTRUCT_TYPENAME_LENGTH];
 } LuastructTypeInfo;
 
-typedef struct LuastructDynamicArray {
-	LuastructTypeInfo type_info;
-	lua_CFunction count_getter;
+typedef struct LuastructArrayDesc {
+	/** 
+	 * A function that can count the elements in the array.
+	 * This also implies that the array is dynamic and the 
+	 * way to access the elements is through a pointer.
+	 */
+	lua_CFunction count_getter; 
+	/**
+	 * If the count_getter is NULL then the array is static
+	 * and this field will be used to determine the size 
+	 * of the array.
+	 */
+	size_t array_size; 
+	/**
+	 * The size of each element in the array.
+	 * We need this to calculate the offset of each element.
+	 */
+	size_t elements_size;
 	LuastructType elements_type;
 	void *elements_type_info;
 	bool elements_are_pointers;
-} LuastructDynamicArray;
+	bool elements_are_readonly;
+} LuastructArrayDesc;
 
 typedef struct LuastructStructField {
 	char field_name[LUASTRUCT_TYPENAME_LENGTH];
 	LuastructType type;
 	void *type_info;
 	uint32_t offset;
-	uint16_t count;
 	bool pointer;
 	bool readonly;
 	struct LuastructStructField *next_by_offset;
@@ -66,9 +79,7 @@ typedef struct LuastructStructField {
 			uint8_t size;
 			uint8_t offset;
 		} bitfield;
-		struct {
-			bool elements_are_readonly;
-		} dynamic_array;
+		LuastructArrayDesc array;
 	};
 } LuastructStructField;
 
@@ -101,14 +112,18 @@ typedef struct LuastructEnum {
 	LuastructEnumValue *values_by_name;
 } LuastructEnum;
 
-typedef struct LuastructObject {
+typedef struct LuastructStructObject {
 	void *type;
 	void *data;
 	bool readonly;
 	bool invalid;
 	bool delete_on_gc;
-	int lua_ref; // reference for the object in Lua registry
-} LuastructObject;
+} LuastructStructObject;
+
+typedef struct LuastructArray {
+	void *data;
+	LuastructArrayDesc *array_info;
+} LuastructArray;
 
 /**
  * Get the types registry.
@@ -144,7 +159,7 @@ LuastructStruct *luastruct_check_struct(lua_State *state, int index);
  * @param pointer Whether the field is a pointer.
  * @param readonly Whether the field is read-only.
  */
-void luastruct_new_struct_field(lua_State *state, const char *name, LuastructType type, const char *type_name, uint32_t offset, uint32_t count, bool pointer, bool readonly);
+void luastruct_new_struct_field(lua_State *state, const char *name, LuastructType type, const char *type_name, uint32_t offset, bool pointer, bool readonly);
 
 /**
  * Create a new bit field in a struct.
@@ -159,17 +174,39 @@ void luastruct_new_struct_field(lua_State *state, const char *name, LuastructTyp
 void luastruct_new_struct_bit_field(lua_State *state, const char *name, LuastructType type, uint32_t offset, uint32_t bit_offset, bool pointer, bool readonly);
 
 /**
- * Create a new dynamic array field in a struct.
- * @param state Lua state.
- * @param name Name of the field.
- * @param type Type of the field.
- * @param type_name Name of the type of the field.
- * @param offset Offset of the field in the struct.
- * @param pointer Whether the field is a pointer.
- * @param readonly Whether the field is read-only.
- * @param elements_are_readonly Whether the elements of the array are read-only.
+ * Creates a new dynamic array descriptor.
+ * @param state The Lua state.
+ * @param type The type of the elements in the array.
+ * @param type_name The name of the type of the elements in the array.
+ * @param count_getter A Lua C function to retrieve the count of elements in the array.
+ * @param elements_are_pointers Whether the elements in the array are pointers.
+ * @param readonly Whether the array is read-only.
+ * @param desc A pointer to the LuastructArrayDesc structure to populate with the array descriptor.
  */
-void luastruct_new_struct_dynamic_array_field(lua_State *state, const char *name, LuastructType type, const char *type_name, uint32_t offset, bool pointer, bool readonly, bool elements_are_readonly);
+void luastruct_new_dynamic_array_desc(lua_State *state, LuastructType type, const char *type_name, lua_CFunction count_getter, bool elements_are_pointers, bool readonly, LuastructArrayDesc *desc);
+
+/**
+ * Creates a new static array descriptor.
+ * @param state The Lua state.
+ * @param type The type of the elements in the array.
+ * @param type_name The name of the type of the elements in the array.
+ * @param size The fixed size of the array.
+ * @param elements_are_pointers Whether the elements in the array are pointers.
+ * @param readonly Whether the array is read-only.
+ * @param desc A pointer to the LuastructArrayDesc structure to populate with the array descriptor.
+ */
+void luastruct_new_static_array_desc(lua_State *state, LuastructType type, const char *type_name, size_t size, bool elements_are_pointers, bool readonly, LuastructArrayDesc *desc);
+
+/**
+ * Creates a new struct field that represents an array in a Lua structure.
+ * @param state The Lua state.
+ * @param name The name of the field.
+ * @param array_info A pointer to the LuastructArrayDesc structure describing the array.
+ * @param offset The offset of the field within the structure.
+ * @param pointer Whether the field is a pointer to the array.
+ * @param readonly Whether the field is read-only.
+ */
+void luastruct_new_struct_array_field(lua_State *state, const char *name, LuastructArrayDesc *array_info, uint32_t offset, bool pointer, bool readonly);
 
 /**
  * Create a new object.
