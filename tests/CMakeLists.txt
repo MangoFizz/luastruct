@@ -22,11 +22,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../lib/lua/)
 # Object index metamethod tests
 add_executable(test_object_index test_object_index.c)
 target_link_libraries(test_object_index ${CHECK_LIBRARIES} pthread lua53 luastruct)
-set(OBJECT_INDEX_TEST_CASES
-    primitives
-    objects
-    unknown_field
-)
+set(OBJECT_INDEX_TEST_CASES primitives objects unknown_field)
 foreach(test ${OBJECT_INDEX_TEST_CASES})
     add_test(NAME "object_index_${test}" COMMAND test_object_index ${test})
 endforeach()
@@ -34,11 +30,7 @@ endforeach()
 # Object newindex metamethod tests
 add_executable(test_object_newindex test_object_newindex.c)
 target_link_libraries(test_object_newindex ${CHECK_LIBRARIES} pthread lua53 luastruct)
-set(OBJECT_NEWINDEX_TEST_CASES
-    primitives
-    objects
-    unknown_field
-)
+set(OBJECT_NEWINDEX_TEST_CASES primitives objects unknown_field)
 foreach(test ${OBJECT_NEWINDEX_TEST_CASES})
     add_test(NAME "object_newindex_${test}" COMMAND test_object_newindex ${test})
 endforeach()
@@ -46,11 +38,7 @@ endforeach()
 # Array index metamethod tests
 add_executable(test_array_index test_array_index.c)
 target_link_libraries(test_array_index ${CHECK_LIBRARIES} pthread lua53 luastruct)
-set(ARRAY_INDEX_TEST_CASES
-    primitives
-    objects
-    out_of_bounds
-)
+set(ARRAY_INDEX_TEST_CASES primitives objects out_of_bounds)
 foreach(test ${ARRAY_INDEX_TEST_CASES})
     add_test(NAME "array_index_${test}" COMMAND test_array_index ${test})
 endforeach()
@@ -58,11 +46,7 @@ endforeach()
 # Array newindex metamethod tests
 add_executable(test_array_newindex test_array_newindex.c)
 target_link_libraries(test_array_newindex ${CHECK_LIBRARIES} pthread lua53 luastruct)
-set(ARRAY_NEWINDEX_TEST_CASES
-    primitives
-    objects
-    out_of_bounds
-)
+set(ARRAY_NEWINDEX_TEST_CASES primitives objects out_of_bounds)
 foreach(test ${ARRAY_NEWINDEX_TEST_CASES})
     add_test(NAME "array_newindex_${test}" COMMAND test_array_newindex ${test})
 endforeach()
