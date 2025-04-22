@@ -23,7 +23,7 @@ static int get_array_size(lua_State *state, LuastructArrayDesc *desc) {
         }
         int size = lua_tointeger(state, -1);
         lua_pop(state, 1);
-        if(size < 0) {
+        if(size <= 0) {
             return luaL_error(state, "Array size is negative");
         }
         return size;
@@ -130,27 +130,54 @@ int luastruct_array__newindex(lua_State *state) {
     }
 
     switch(array_info->elements_type) {
-        case LUAST_INT8:
-            *(int8_t *)(data) = luaL_checkinteger(state, 3);
+        case LUAST_INT8: {
+            lua_Integer value = luaL_checkinteger(state, 3);
+            if(value < INT8_MIN || value > INT8_MAX) {
+                return luaL_error(state, "Value out of range for int8: %d", value);
+            }
+            *(int8_t *)(data) = value;
             break;
-        case LUAST_INT16:
-            *(int16_t *)(data) = luaL_checkinteger(state, 3);
+        }
+        case LUAST_INT16: {
+            lua_Integer value = luaL_checkinteger(state, 3);
+            if(value < INT16_MIN || value > INT16_MAX) {
+                return luaL_error(state, "Value out of range for int16: %d", value);
+            }
+            *(int16_t *)(data) = value;
             break;
-        case LUAST_INT32:
-            *(int32_t *)(data) = luaL_checkinteger(state, 3);
+        }
+        case LUAST_INT32: {
+            lua_Integer value = luaL_checkinteger(state, 3);
+            if(value < INT32_MIN || value > INT32_MAX) {
+                return luaL_error(state, "Value out of range for int32: %d", value);
+            }
+            *(int32_t *)(data) = value;
             break;
-        case LUAST_INT64:
-            *(int64_t *)(data) = luaL_checkinteger(state, 3);
+        }
+        case LUAST_UINT8: {
+            lua_Integer value = luaL_checkinteger(state, 3);
+            if(value < 0 || value > UINT8_MAX) {
+                return luaL_error(state, "Value out of range for uint8: %d", value);
+            }
+            *(uint8_t *)(data) = value;
             break;
-        case LUAST_UINT8:
-            *(uint8_t *)(data) = luaL_checkinteger(state, 3);
+        }
+        case LUAST_UINT16: {
+            lua_Integer value = luaL_checkinteger(state, 3);
+            if(value < 0 || value > UINT16_MAX) {
+                return luaL_error(state, "Value out of range for uint16: %d", value);
+            }
+            *(uint16_t *)(data) = value;
             break;
-        case LUAST_UINT16:
-            *(uint16_t *)(data) = luaL_checkinteger(state, 3);
+        }
+        case LUAST_UINT32: {
+            lua_Integer value = luaL_checkinteger(state, 3);
+            if(value < 0 || value > UINT32_MAX) {
+                return luaL_error(state, "Value out of range for uint32: %d", value);
+            }
+            *(uint32_t *)(data) = value;
             break;
-        case LUAST_UINT32:
-            *(uint32_t *)(data) = luaL_checkinteger(state, 3);
-            break;
+        }
         case LUAST_FLOAT:
             *(float *)(data) = luaL_checknumber(state, 3);
             break;

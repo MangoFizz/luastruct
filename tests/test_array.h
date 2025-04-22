@@ -36,7 +36,8 @@ typedef struct TestStruct {
 } TestStruct;
 
 static inline int get_dynamic_array_size(lua_State *state) {
-    return 5;
+    lua_pushinteger(state, 5);
+    return 1;
 }
 
 static inline void init_test_struct(TestStruct *test_struct) {

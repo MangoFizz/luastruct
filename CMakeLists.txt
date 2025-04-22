@@ -13,8 +13,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -Werror=unused-value")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-missing-field-initializers -Wno-format")
 
-include(lib/lua/lua.cmake)
+enable_testing()
 add_subdirectory(tests/)
+
+include(lib/lua/lua.cmake)
 
 include_directories(lib/lua)
 
@@ -24,4 +26,3 @@ add_library(luastruct STATIC
     src/array.c
     src/object.c
 )
-

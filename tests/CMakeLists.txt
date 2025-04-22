@@ -16,8 +16,6 @@ include(CheckLibraryExists)
 include(CheckSymbolExists)
 include(CheckTypeSize)
 
-enable_testing()
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../lib/lua/)
 
@@ -56,3 +54,20 @@ set(ARRAY_INDEX_TEST_CASES
 foreach(test ${ARRAY_INDEX_TEST_CASES})
     add_test(NAME "array_index_${test}" COMMAND test_array_index ${test})
 endforeach()
+
+# Array newindex metamethod tests
+add_executable(test_array_newindex test_array_newindex.c)
+target_link_libraries(test_array_newindex ${CHECK_LIBRARIES} pthread lua53 luastruct)
+set(ARRAY_NEWINDEX_TEST_CASES
+    primitives
+    objects
+    out_of_bounds
+)
+foreach(test ${ARRAY_NEWINDEX_TEST_CASES})
+    add_test(NAME "array_newindex_${test}" COMMAND test_array_newindex ${test})
+endforeach()
+
+# Array len metamethod tests
+add_executable(test_array_len test_array_len.c)
+target_link_libraries(test_array_len ${CHECK_LIBRARIES} pthread lua53 luastruct)
+add_test(NAME "array_len" COMMAND test_array_len)

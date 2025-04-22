@@ -23,117 +23,109 @@ void teardown(void) {
     state = NULL;
 }
 
-#define TEST_INDEX_STATIC(type, min_val, max_val)                            \
-START_TEST(test_index_static_##type) {                                       \
-    for (int i = 0; i < 5; i++) {                                            \
-        test_struct.static_##type[i] = min_val + i;                          \
-    }                                                                        \
-    lua_getfield(state, -1, "static_" #type);                                \
-    for (int i = 0; i < 5; i++) {                                            \
-        lua_pushinteger(state, i + 1);                                       \
-        lua_gettable(state, -2);                                             \
-        type##_t value = luaL_checkinteger(state, -1);                       \
-        ck_assert_int_eq(value, min_val + i);                                \
-        lua_pop(state, 1);                                                   \
-    }                                                                        \
-    lua_pop(state, 1);                                                       \
-}                                                                            \
-END_TEST                                                                     \
-                                                                             \
-START_TEST(test_index_static_##type##_min) {                                 \
-    for (int i = 0; i < 5; i++) {                                            \
-        test_struct.static_##type[i] = min_val;                              \
-    }                                                                        \
-    lua_getfield(state, -1, "static_" #type);                                \
-    for (int i = 0; i < 5; i++) {                                            \
-        lua_pushinteger(state, i + 1);                                       \
-        lua_gettable(state, -2);                                             \
-        type##_t value = luaL_checkinteger(state, -1);                       \
-        ck_assert_int_eq(value, min_val);                                    \
-        lua_pop(state, 1);                                                   \
-    }                                                                        \
-    lua_pop(state, 1);                                                       \
-}                                                                            \
-END_TEST                                                                     \
-                                                                             \
-START_TEST(test_index_static_##type##_max) {                                 \
-    for (int i = 0; i < 5; i++) {                                            \
-        test_struct.static_##type[i] = max_val;                              \
-    }                                                                        \
-    lua_getfield(state, -1, "static_" #type);                                \
-    for (int i = 0; i < 5; i++) {                                            \
-        lua_pushinteger(state, i + 1);                                       \
-        lua_gettable(state, -2);                                             \
-        type##_t value = luaL_checkinteger(state, -1);                       \
-        ck_assert_int_eq(value, max_val);                                    \
-        lua_pop(state, 1);                                                   \
-    }                                                                        \
-    lua_pop(state, 1);                                                       \
-}                                                                            \
-END_TEST
+#define TEST_ARRAY_INDEX(type, min_val, max_val)                                 \
+    START_TEST(test_index_static_##type) {                                       \
+        for (int i = 0; i < 5; i++) {                                            \
+            test_struct.static_##type[i] = min_val + i;                          \
+        }                                                                        \
+        lua_getfield(state, -1, "static_" #type);                                \
+        for (int i = 0; i < 5; i++) {                                            \
+            lua_pushinteger(state, i + 1);                                       \
+            lua_gettable(state, -2);                                             \
+            type##_t value = luaL_checkinteger(state, -1);                       \
+            ck_assert_int_eq(value, min_val + i);                                \
+            lua_pop(state, 1);                                                   \
+        }                                                                        \
+        lua_pop(state, 1);                                                       \
+    }                                                                            \
+    END_TEST                                                                     \
+                                                                                 \
+    START_TEST(test_index_static_##type##_min) {                                 \
+        for (int i = 0; i < 5; i++) {                                            \
+            test_struct.static_##type[i] = min_val;                              \
+        }                                                                        \
+        lua_getfield(state, -1, "static_" #type);                                \
+        for (int i = 0; i < 5; i++) {                                            \
+            lua_pushinteger(state, i + 1);                                       \
+            lua_gettable(state, -2);                                             \
+            type##_t value = luaL_checkinteger(state, -1);                       \
+            ck_assert_int_eq(value, min_val);                                    \
+            lua_pop(state, 1);                                                   \
+        }                                                                        \
+        lua_pop(state, 1);                                                       \
+    }                                                                            \
+    END_TEST                                                                     \
+                                                                                 \
+    START_TEST(test_index_static_##type##_max) {                                 \
+        for (int i = 0; i < 5; i++) {                                            \
+            test_struct.static_##type[i] = max_val;                              \
+        }                                                                        \
+        lua_getfield(state, -1, "static_" #type);                                \
+        for (int i = 0; i < 5; i++) {                                            \
+            lua_pushinteger(state, i + 1);                                       \
+            lua_gettable(state, -2);                                             \
+            type##_t value = luaL_checkinteger(state, -1);                       \
+            ck_assert_int_eq(value, max_val);                                    \
+            lua_pop(state, 1);                                                   \
+        }                                                                        \
+        lua_pop(state, 1);                                                       \
+    }                                                                            \
+    END_TEST                                                                     \
+                                                                                 \
+    START_TEST(test_index_dynamic_##type) {                                      \
+        for (int i = 0; i < 5; i++) {                                            \
+            test_struct.dynamic_##type[i] = min_val + i;                         \
+        }                                                                        \
+        lua_getfield(state, -1, "dynamic_" #type);                               \
+        for (int i = 0; i < 5; i++) {                                            \
+            lua_pushinteger(state, i + 1);                                       \
+            lua_gettable(state, -2);                                             \
+            type##_t value = luaL_checkinteger(state, -1);                       \
+            ck_assert_int_eq(value, min_val + i);                                \
+            lua_pop(state, 1);                                                   \
+        }                                                                        \
+        lua_pop(state, 1);                                                       \
+    }                                                                            \
+    END_TEST                                                                     \
+                                                                                 \
+    START_TEST(test_index_dynamic_##type##_min) {                                \
+        for (int i = 0; i < 5; i++) {                                            \
+            test_struct.dynamic_##type[i] = min_val;                             \
+        }                                                                        \
+        lua_getfield(state, -1, "dynamic_" #type);                               \
+        for (int i = 0; i < 5; i++) {                                            \
+            lua_pushinteger(state, i + 1);                                       \
+            lua_gettable(state, -2);                                             \
+            type##_t value = luaL_checkinteger(state, -1);                       \
+            ck_assert_int_eq(value, min_val);                                    \
+            lua_pop(state, 1);                                                   \
+        }                                                                        \
+        lua_pop(state, 1);                                                       \
+    }                                                                            \
+    END_TEST                                                                     \
+                                                                                 \
+    START_TEST(test_index_dynamic_##type##_max) {                                \
+        for (int i = 0; i < 5; i++) {                                            \
+            test_struct.dynamic_##type[i] = max_val;                             \
+        }                                                                        \
+        lua_getfield(state, -1, "dynamic_" #type);                               \
+        for (int i = 0; i < 5; i++) {                                            \
+            lua_pushinteger(state, i + 1);                                       \
+            lua_gettable(state, -2);                                             \
+            type##_t value = luaL_checkinteger(state, -1);                       \
+            ck_assert_int_eq(value, max_val);                                    \
+            lua_pop(state, 1);                                                   \
+        }                                                                        \
+        lua_pop(state, 1);                                                       \
+    }                                                                            \
+    END_TEST
 
-#define TEST_INDEX_DYNAMIC(type, min_val, max_val)                           \
-START_TEST(test_index_dynamic_##type) {                                      \
-    for (int i = 0; i < 5; i++) {                                            \
-        test_struct.dynamic_##type[i] = min_val + i;                         \
-    }                                                                        \
-    lua_getfield(state, -1, "dynamic_" #type);                               \
-    for (int i = 0; i < 5; i++) {                                            \
-        lua_pushinteger(state, i + 1);                                       \
-        lua_gettable(state, -2);                                             \
-        type##_t value = luaL_checkinteger(state, -1);                       \
-        ck_assert_int_eq(value, min_val + i);                                \
-        lua_pop(state, 1);                                                   \
-    }                                                                        \
-    lua_pop(state, 1);                                                       \
-}                                                                            \
-END_TEST                                                                     \
-                                                                             \
-START_TEST(test_index_dynamic_##type##_min) {                                \
-    for (int i = 0; i < 5; i++) {                                            \
-        test_struct.dynamic_##type[i] = min_val;                             \
-    }                                                                        \
-    lua_getfield(state, -1, "dynamic_" #type);                               \
-    for (int i = 0; i < 5; i++) {                                            \
-        lua_pushinteger(state, i + 1);                                       \
-        lua_gettable(state, -2);                                             \
-        type##_t value = luaL_checkinteger(state, -1);                       \
-        ck_assert_int_eq(value, min_val);                                    \
-        lua_pop(state, 1);                                                   \
-    }                                                                        \
-    lua_pop(state, 1);                                                       \
-}                                                                            \
-END_TEST                                                                     \
-                                                                             \
-START_TEST(test_index_dynamic_##type##_max) {                                \
-    for (int i = 0; i < 5; i++) {                                            \
-        test_struct.dynamic_##type[i] = max_val;                             \
-    }                                                                        \
-    lua_getfield(state, -1, "dynamic_" #type);                               \
-    for (int i = 0; i < 5; i++) {                                            \
-        lua_pushinteger(state, i + 1);                                       \
-        lua_gettable(state, -2);                                             \
-        type##_t value = luaL_checkinteger(state, -1);                       \
-        ck_assert_int_eq(value, max_val);                                    \
-        lua_pop(state, 1);                                                   \
-    }                                                                        \
-    lua_pop(state, 1);                                                       \
-}                                                                            \
-END_TEST
-
-TEST_INDEX_STATIC(int32, INT32_MIN, INT32_MAX)
-TEST_INDEX_STATIC(int16, INT16_MIN, INT16_MAX)
-TEST_INDEX_STATIC(int8, INT8_MIN, INT8_MAX)
-TEST_INDEX_STATIC(uint32, 0, UINT32_MAX)
-TEST_INDEX_STATIC(uint16, 0, UINT16_MAX)
-TEST_INDEX_STATIC(uint8, 0, UINT8_MAX)
-
-TEST_INDEX_DYNAMIC(int32, INT32_MIN, INT32_MAX)
-TEST_INDEX_DYNAMIC(int16, INT16_MIN, INT16_MAX)
-TEST_INDEX_DYNAMIC(int8, INT8_MIN, INT8_MAX)
-TEST_INDEX_DYNAMIC(uint32, 0, UINT32_MAX)
-TEST_INDEX_DYNAMIC(uint16, 0, UINT16_MAX)
-TEST_INDEX_DYNAMIC(uint8, 0, UINT8_MAX)
+TEST_ARRAY_INDEX(int32, INT32_MIN, INT32_MAX)
+TEST_ARRAY_INDEX(int16, INT16_MIN, INT16_MAX)
+TEST_ARRAY_INDEX(int8, INT8_MIN, INT8_MAX)
+TEST_ARRAY_INDEX(uint32, 0, UINT32_MAX)
+TEST_ARRAY_INDEX(uint16, 0, UINT16_MAX)
+TEST_ARRAY_INDEX(uint8, 0, UINT8_MAX)
 
 START_TEST(test_index_static_float_precision) {
     float highPrecisionFloat = 3.14159265358979323846f;
@@ -202,10 +194,11 @@ START_TEST(test_index_dynamic_boolean) {
 END_TEST
 
 START_TEST(test_index_out_of_bounds) {
-    int res = luaL_dostring(state, "function test(obj) obj.static_int32[6] = 0 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
+    lua_getfield(state, -1, "static_int32");
+    lua_pushinteger(state, LUAS_SIZEOF_ARRAY(TestStruct, static_int32) + 1);
+    lua_gettable(state, -2);
+    ck_assert_int_eq(lua_type(state, -1), LUA_TNIL);
+    lua_pop(state, 1);
 }
 END_TEST
 

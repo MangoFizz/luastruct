@@ -4,6 +4,7 @@
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+#include "debug.h"
 #include "test_object.h"
 
 static lua_State *state = NULL;
@@ -22,260 +23,55 @@ void teardown(void) {
     state = NULL;
 }
 
-START_TEST(test_newindex_int32_min) {
-    test_struct.int32 = 0;
-    lua_pushinteger(state, INT32_MIN);
-    lua_setfield(state, -2, "int32");
-    ck_assert_int_eq(test_struct.int32, INT32_MIN);
-}
-END_TEST
+#define TEST_NEWINDEX_INT(type, min_val, max_val)                                                       \
+    START_TEST(test_newindex_##type##_min) {                                                            \
+        test_struct.type = 0;                                                                           \
+        lua_pushinteger(state, min_val);                                                                \
+        lua_setfield(state, -2, #type);                                                                 \
+        ck_assert_int_eq(test_struct.type, min_val);                                                    \
+    }                                                                                                   \
+    END_TEST                                                                                            \
+                                                                                                        \
+    START_TEST(test_newindex_##type##_max) {                                                            \
+        test_struct.type = 0;                                                                           \
+        lua_pushinteger(state, max_val);                                                                \
+        lua_setfield(state, -2, #type);                                                                 \
+        ck_assert_int_eq(test_struct.type, max_val);                                                    \
+    }                                                                                                   \
+    END_TEST                                                                                            \
+                                                                                                        \
+    START_TEST(test_newindex_##type##_overflow_max) {                                                   \
+        test_struct.type = 0;                                                                           \
+        int res = luaL_dostring(state, "function test(obj) obj." #type " = " STR(max_val) " + 1 end");  \
+        lua_getglobal(state, "test");                                                                   \
+        lua_pushvalue(state, -2);                                                                       \
+        ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);                                            \
+    }                                                                                                   \
+    END_TEST                                                                                            \
+                                                                                                        \
+    START_TEST(test_newindex_##type##_overflow_min) {                                                   \
+        test_struct.type = 0;                                                                           \
+        int res = luaL_dostring(state, "function test(obj) obj." #type " = " STR(min_val) " - 1 end");  \
+        lua_getglobal(state, "test");                                                                   \
+        lua_pushvalue(state, -2);                                                                       \
+        ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);                                            \
+    }                                                                                                   \
+    END_TEST                                                                                            \
+                                                                                                        \
+    START_TEST(test_newindex_##type##_nil) {                                                            \
+        int res = luaL_dostring(state, "function test(obj) obj." #type " = nil end");                   \
+        lua_getglobal(state, "test");                                                                   \
+        lua_pushvalue(state, -2);                                                                       \
+        ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);                                            \
+    }                                                                                                   \
+    END_TEST
 
-START_TEST(test_newindex_int32_max) {
-    test_struct.int32 = 0;
-    lua_pushinteger(state, INT32_MAX);
-    lua_setfield(state, -2, "int32");
-    ck_assert_int_eq(test_struct.int32, INT32_MAX);
-}
-END_TEST
-
-START_TEST(test_newindex_int32_overflow_max) {
-    test_struct.int32 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.int32 = 2147483648 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_int32_overflow_min) {
-    test_struct.int32 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.int32 = -2147483649 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_int32_nil) {
-    int res = luaL_dostring(state, "function test(obj) obj.int32 = nil end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_int16_min) {
-    test_struct.int16 = 0;
-    lua_pushinteger(state, INT16_MIN);
-    lua_setfield(state, -2, "int16");
-    ck_assert_int_eq(test_struct.int16, INT16_MIN);
-}
-END_TEST
-
-START_TEST(test_newindex_int16_max) {
-    test_struct.int16 = 0;
-    lua_pushinteger(state, INT16_MAX);
-    lua_setfield(state, -2, "int16");
-    ck_assert_int_eq(test_struct.int16, INT16_MAX);
-}
-END_TEST
-
-START_TEST(test_newindex_int16_overflow_max) {
-    test_struct.int16 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.int16 = 32768 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-
-START_TEST(test_newindex_int16_overflow_min) {
-    test_struct.int16 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.int16 = -32769 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_int16_nil) {
-    test_struct.int16 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.int16 = nil end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_int8_min) {
-    test_struct.int8 = 0;
-    lua_pushinteger(state, INT8_MIN);
-    lua_setfield(state, -2, "int8");
-    ck_assert_int_eq(test_struct.int8, INT8_MIN);
-}
-END_TEST
-
-START_TEST(test_newindex_int8_max) {
-    test_struct.int8 = 0;
-    lua_pushinteger(state, INT8_MAX);
-    lua_setfield(state, -2, "int8");
-    ck_assert_int_eq(test_struct.int8, INT8_MAX);
-}
-END_TEST
-
-START_TEST(test_newindex_int8_overflow_max) {
-    test_struct.int8 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.int8 = 128 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-
-START_TEST(test_newindex_int8_overflow_min) {
-    test_struct.int8 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.int8 = -129 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_int8_nil) {
-    test_struct.int8 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.int8 = nil end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_uint32_min) {
-    test_struct.uint32 = 0;
-    lua_pushinteger(state, 0);
-    lua_setfield(state, -2, "uint32");
-    ck_assert_int_eq(test_struct.uint32, 0);
-}
-END_TEST
-
-START_TEST(test_newindex_uint32_max) {
-    test_struct.uint32 = 0;
-    lua_pushinteger(state, UINT32_MAX);
-    lua_setfield(state, -2, "uint32");
-    ck_assert_int_eq(test_struct.uint32, UINT32_MAX);
-}
-END_TEST
-
-START_TEST(test_newindex_uint32_overflow_max) {
-    test_struct.uint32 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.uint32 = 4294967296 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_uint32_overflow_min) {
-    test_struct.uint32 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.uint32 = -1 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_uint32_nil) {
-    test_struct.uint32 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.uint32 = nil end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_uint16_min) {
-    test_struct.uint16 = 0;
-    lua_pushinteger(state, 0);
-    lua_setfield(state, -2, "uint16");
-    ck_assert_int_eq(test_struct.uint16, 0);
-}
-END_TEST
-
-START_TEST(test_newindex_uint16_max) {
-    test_struct.uint16 = 0;
-    lua_pushinteger(state, UINT16_MAX);
-    lua_setfield(state, -2, "uint16");
-    ck_assert_int_eq(test_struct.uint16, UINT16_MAX);
-}
-END_TEST
-
-START_TEST(test_newindex_uint16_overflow_max) {
-    test_struct.uint16 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.uint16 = 65536 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_uint16_overflow_min) {
-    test_struct.uint16 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.uint16 = -1 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_uint16_nil) {
-    test_struct.uint16 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.uint16 = nil end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_uint8_min) {
-    test_struct.uint8 = 0;
-    lua_pushinteger(state, 0);
-    lua_setfield(state, -2, "uint8");
-    ck_assert_int_eq(test_struct.uint8, 0);
-}
-END_TEST
-
-START_TEST(test_newindex_uint8_max) {
-    test_struct.uint8 = 0;
-    lua_pushinteger(state, UINT8_MAX);
-    lua_setfield(state, -2, "uint8");
-    ck_assert_int_eq(test_struct.uint8, UINT8_MAX);
-}
-END_TEST
-
-START_TEST(test_newindex_uint8_overflow_max) {
-    test_struct.uint8 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.uint8 = 256 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_uint8_overflow_min) {
-    test_struct.uint8 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.uint8 = -1 end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
-
-START_TEST(test_newindex_uint8_nil) {
-    test_struct.uint8 = 0;
-    int res = luaL_dostring(state, "function test(obj) obj.uint8 = nil end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_ne(lua_pcall(state, 1, 0, 0), LUA_OK);
-}
-END_TEST
+TEST_NEWINDEX_INT(int32, INT32_MIN, INT32_MAX)
+TEST_NEWINDEX_INT(int16, INT16_MIN, INT16_MAX)
+TEST_NEWINDEX_INT(int8, INT8_MIN, INT8_MAX)
+TEST_NEWINDEX_INT(uint32, 0, UINT32_MAX)
+TEST_NEWINDEX_INT(uint16, 0, UINT16_MAX)
+TEST_NEWINDEX_INT(uint8, 0, UINT8_MAX)
 
 START_TEST(test_newindex_float_precision) {
     float highPrecisionFloat = 3.14159265358979323846f;
