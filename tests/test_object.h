@@ -42,17 +42,17 @@ static inline void init_test_struct(TestStruct *test_struct) {
     test_struct->uint8 = 0;
     test_struct->number = 0.0f;
     test_struct->boolean = false;
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         test_struct->static_array[i] = 0;
     }
     test_struct->dynamic_array = malloc(sizeof(int8_t) * 5);
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         test_struct->dynamic_array[i] = 0;
     }
     test_struct->sub_struct.a = 0;
     test_struct->sub_struct.b = 0;
     test_struct->sub_struct.c = 0;
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         test_struct->sub_struct.d[i] = 0;
     }
 }

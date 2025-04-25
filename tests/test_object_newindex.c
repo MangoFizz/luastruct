@@ -121,7 +121,7 @@ START_TEST(test_newindex_object_success) {
     sub_struct_2.a = 42;
     sub_struct_2.b = 93;
     sub_struct_2.c = 7;
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         sub_struct_2.d[i] = i + 1;
     }
     LUAS_OBJECT(state, SubStruct, &sub_struct_2, false);

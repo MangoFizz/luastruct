@@ -12,6 +12,7 @@ static TestStruct test_struct;
 
 void setup(void) {
     state = luaL_newstate();
+    luaL_openlibs(state);
     init_test_struct(&test_struct);
     define_test_struct(state);
     LUAS_OBJECT(state, TestStruct, &test_struct, false);
@@ -23,37 +24,32 @@ void teardown(void) {
     state = NULL;
 }
 
-START_TEST(test_len_static_array) {
-    lua_getfield(state, -1, "static_int32");
-    int res = luaL_dostring(state, "function test(array) return #array end");
-    lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
-    ck_assert_int_eq(lua_pcall(state, 1, 1, 0), LUA_OK);
-    int len = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(len, 5);
-    lua_pop(state, 2);
+static int lua_check_pair(lua_State *state) {
+    int key = luaL_checkinteger(state, 1);
+    int value = luaL_checkinteger(state, 2);
+    ck_assert_int_eq(test_struct.static_int32[key - 1], value);
+    return 0;
 }
-END_TEST
 
-START_TEST(test_len_dynamic_array) {
-    lua_getfield(state, -1, "dynamic_int32");
-    int res = luaL_dostring(state, "function test(array) return #array end");
+START_TEST(test_pairs) {
+    for(int i = 0; i < 5; i++) {
+        test_struct.static_int32[i] = (i + 1) * 11;
+    }
+    lua_pushcfunction(state, lua_check_pair);
+    lua_setglobal(state, "check_pair");
+    int res = luaL_dostring(state, "function test(array) for k, v in pairs(array) do check_pair(k, v) end end");
     lua_getglobal(state, "test");
-    lua_pushvalue(state, -2);
+    lua_getfield(state, -2, "static_int32");
     ck_assert_int_eq(lua_pcall(state, 1, 1, 0), LUA_OK);
-    int len = luaL_checkinteger(state, -1);
-    ck_assert_int_eq(len, 5);
-    lua_pop(state, 2);
 }
 END_TEST
 
 Suite *create_suite(void) {
-    Suite *s = suite_create("array_len_metamethod");
+    Suite *s = suite_create("array_pairs_metamethod");
     
-    TCase *len = tcase_create("len");
+    TCase *len = tcase_create("pairs");
     tcase_add_checked_fixture(len, setup, teardown);
-    tcase_add_test(len, test_len_static_array);
-    tcase_add_test(len, test_len_dynamic_array);
+    tcase_add_test(len, test_pairs);
     suite_add_tcase(s, len);
 
     return s;

@@ -70,7 +70,7 @@ void teardown(void) {
         lua_getfield(state, -1, "static_" #type);                                                           \
         for(int i = 0; i < 5; i++) {                                                                        \
             char script[256];                                                                               \
-            sprintf(script, "function test(arr) arr[%d] = %ld + 1 end", i + 1, max_val);                     \
+            sprintf(script, "function test(arr) arr[%d] = %ld + 1 end", i + 1, max_val);                    \
             int res = luaL_dostring(state, script);                                                         \
             lua_getglobal(state, "test");                                                                   \
             lua_pushvalue(state, -2);                                                                       \
@@ -140,7 +140,7 @@ void teardown(void) {
         lua_getfield(state, -1, "dynamic_" #type);                                                          \
         for(int i = 0; i < 5; i++) {                                                                        \
             char script[256];                                                                               \
-            sprintf(script, "function test(arr) arr[%d] = %ld + 1 end", i + 1, max_val);                     \
+            sprintf(script, "function test(arr) arr[%d] = %ld + 1 end", i + 1, max_val);                    \
             int res = luaL_dostring(state, script);                                                         \
             lua_getglobal(state, "test");                                                                   \
             lua_pushvalue(state, -2);                                                                       \
@@ -174,11 +174,11 @@ TEST_ARRAY_NEWINDEX(uint8, 0, UINT8_MAX)
 
 START_TEST(test_newindex_static_float_precision) {
     float highPrecisionFloat = 3.14159265358979323846f;
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         test_struct.static_number[i] = highPrecisionFloat;
     }
     lua_getfield(state, -1, "static_number");
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         lua_pushinteger(state, i + 1);
         lua_gettable(state, -2);
         float value = luaL_checknumber(state, -1);
@@ -190,11 +190,11 @@ START_TEST(test_newindex_static_float_precision) {
 END_TEST
 
 START_TEST(test_newindex_static_boolean) {
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         test_struct.static_boolean[i] = (i % 2 == 0);
     }
     lua_getfield(state, -1, "static_boolean");
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         lua_pushinteger(state, i + 1);
         lua_gettable(state, -2);
         bool value = lua_toboolean(state, -1);
@@ -207,11 +207,11 @@ END_TEST
 
 START_TEST(test_newindex_dynamic_float_precision) {
     float highPrecisionFloat = 3.14159265358979323846f;
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         test_struct.dynamic_number[i] = highPrecisionFloat;
     }
     lua_getfield(state, -1, "dynamic_number");
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         lua_pushinteger(state, i + 1);
         lua_gettable(state, -2);
         float value = luaL_checknumber(state, -1);
@@ -223,11 +223,11 @@ START_TEST(test_newindex_dynamic_float_precision) {
 END_TEST
 
 START_TEST(test_newindex_dynamic_boolean) {
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         test_struct.dynamic_boolean[i] = (i % 2 == 0);
     }
     lua_getfield(state, -1, "dynamic_boolean");
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         lua_pushinteger(state, i + 1);
         lua_gettable(state, -2);
         bool value = lua_toboolean(state, -1);
@@ -275,7 +275,7 @@ START_TEST(test_newindex_dynamic_object) {
 END_TEST
 
 Suite *create_suite(void) {
-    Suite *s = suite_create("object_index_metamethod");
+    Suite *s = suite_create("array_newindex_metamethod");
     
     TCase *primitives = tcase_create("primitives");
     tcase_add_checked_fixture(primitives, setup, teardown);

@@ -42,11 +42,11 @@ static inline int get_dynamic_array_size(lua_State *state) {
 
 static inline void init_test_struct(TestStruct *test_struct) {
     #define INIT_ARRAY(arr, type) \
-        for (int i = 0; i < 5; i++) { \
+        for(int i = 0; i < 5; i++) { \
             test_struct->static_##arr[i] = 0; \
         } \
         test_struct->dynamic_##arr = malloc(sizeof(type) * 5); \
-        for (int i = 0; i < 5; i++) { \
+        for(int i = 0; i < 5; i++) { \
             test_struct->dynamic_##arr[i] = 0; \
         }
     
@@ -59,20 +59,20 @@ static inline void init_test_struct(TestStruct *test_struct) {
     INIT_ARRAY(number, float);
     INIT_ARRAY(boolean, bool);
 
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         test_struct->static_sub_struct[i].a = 0;
         test_struct->static_sub_struct[i].b = 0;
         test_struct->static_sub_struct[i].c = 0;
-        for (int j = 0; j < 5; j++) {
+        for(int j = 0; j < 5; j++) {
             test_struct->static_sub_struct[i].d[j] = 0;
         }
     }
     test_struct->dynamic_sub_struct = malloc(sizeof(SubStruct) * 5);
-    for (int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++) {
         test_struct->dynamic_sub_struct[i].a = 0;
         test_struct->dynamic_sub_struct[i].b = 0;
         test_struct->dynamic_sub_struct[i].c = 0;
-        for (int j = 0; j < 5; j++) {
+        for(int j = 0; j < 5; j++) {
             test_struct->dynamic_sub_struct[i].d[j] = 0;
         }
     }

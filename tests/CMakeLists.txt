@@ -55,3 +55,8 @@ endforeach()
 add_executable(test_array_len test_array_len.c)
 target_link_libraries(test_array_len ${CHECK_LIBRARIES} pthread lua53 luastruct)
 add_test(NAME "array_len" COMMAND test_array_len)
+
+# Array pairs metamethod tests
+add_executable(test_array_pairs test_array_pairs.c)
+target_link_libraries(test_array_pairs ${CHECK_LIBRARIES} pthread lua53 luastruct)
+add_test(NAME "array_pairs" COMMAND test_array_pairs)
