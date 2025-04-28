@@ -76,7 +76,7 @@ int luastruct_object__index(lua_State *state) {
 
     const char *field_name = luaL_checkstring(state, 2);
     LuastructStruct *st = obj->type;
-    LUAS_DEBUG_MSG("Accessing field \"%s\" of struct at 0x%.8X (%s) of type \"%s\"\n", field_name, obj->data, obj->readonly ? "ro" : "rw", st->type_info.name);
+    LUAS_DEBUG_MSG("Indexing field \"%s\" of struct at 0x%.8X (%s) of type \"%s\"\n", field_name, obj->data, obj->readonly ? "ro" : "rw", st->type_info.name);
     
     LuastructStructField *field = st->fields_by_name;
     while(field) {
@@ -290,10 +290,97 @@ int luastruct_object__newindex(lua_State *state) {
     return luaL_error(state, "Attempt to set unknown field: %s", field_name);
 }
 
+int luastruct_object__next(lua_State *state) {
+    LuastructStructObject *obj = luaL_checkudata(state, 1, OBJECT_METATABLE_NAME);
+    if(!obj || obj->invalid) {
+        return luaL_error(state, "Object is invalid in __next method");
+    }
+
+    LuastructStruct *st = obj->type;
+    if(st->fields_by_name == NULL) {
+        LUAS_DEBUG_MSG("No fields found in object at 0x%.8X (%s)\n", obj->data, obj->readonly ? "ro" : "rw");
+        lua_pushnil(state);
+        return 1;
+    }
+
+    const char *field_name = NULL;
+    if(lua_isnil(state, 2)) {
+        field_name = st->fields_by_name->field_name;
+        lua_pushstring(state, field_name);
+        lua_pushcfunction(state, luastruct_object__index);
+        lua_pushvalue(state, 1);
+        lua_pushstring(state, field_name);
+        lua_call(state, 2, 1);
+        return 2;
+    }
+    
+    field_name = luaL_checkstring(state, 2);
+    LUAS_DEBUG_MSG("Iterating field \"%s\" of struct at 0x%.8X (%s) of type \"%s\"\n", field_name, obj->data, obj->readonly ? "ro" : "rw", st->type_info.name);
+    
+    LuastructStructField *field = st->fields_by_name;
+    while(field) {
+        if(strcmp(field->field_name, field_name) == 0) {
+            if(field->next_by_name) {
+                lua_pushstring(state, field->next_by_name->field_name);
+                lua_pushcfunction(state, luastruct_object__index);
+                lua_pushvalue(state, 1);
+                lua_pushstring(state, field->next_by_name->field_name);
+                lua_call(state, 2, 1);
+                return 2;
+            }
+            break;
+        }
+        field = field->next_by_name;
+    }
+    lua_pushnil(state);
+    return 1;
+}
+
+int luastruct_object__pairs(lua_State *state) {
+	lua_settop(state, 1);
+    LUAS_DEBUG_MSG("Iterating object at 0x%.8X (%s)\n", lua_touserdata(state, 1), lua_toboolean(state, 1) ? "ro" : "rw");
+	lua_pushcfunction(state, luastruct_object__next);
+	lua_pushvalue(state, 1);
+	lua_pushnil(state);
+	return 3;
+}
+
+int luastruct_object__string(lua_State *state) {
+    LuastructStructObject *obj = luaL_checkudata(state, 1, OBJECT_METATABLE_NAME);
+    if(!obj || obj->invalid) {
+        return luaL_error(state, "Object is invalid in __tostring method");
+    }
+    LuastructStruct *st = obj->type;
+    lua_pushfstring(state, "struct %s(%p)", st->type_info.name, obj->data);
+    return 1;
+}
+
+int luastruct_object__eq(lua_State *state) {
+    LuastructStructObject *obj1 = luaL_checkudata(state, 1, OBJECT_METATABLE_NAME);
+    LuastructStructObject *obj2 = luaL_checkudata(state, 2, OBJECT_METATABLE_NAME);
+    bool equal = true;
+    #define ASSERT(cond) equal = equal && (cond)
+    ASSERT(obj1 != NULL);
+    ASSERT(obj2 != NULL);
+    ASSERT(obj1->invalid == false);
+    ASSERT(obj2->invalid == false);
+    ASSERT(obj1->data != NULL);
+    ASSERT(obj2->data != NULL);
+    ASSERT(obj1->type == obj2->type);
+    ASSERT(obj1->data == obj2->data);
+    #undef ASSERT
+    lua_pushboolean(state, equal);
+    return 1;
+}
+
 static const struct luaL_Reg luastruct_object_metatable_methods[] = {
     {"__gc", luastruct_object__gc},
     {"__index", luastruct_object__index},
     {"__newindex", luastruct_object__newindex},
+    {"__next", luastruct_object__next},
+    {"__pairs", luastruct_object__pairs},
+    {"__tostring", luastruct_object__index},
+    {"__eq", luastruct_object__eq},
     {NULL, NULL}
 };
 

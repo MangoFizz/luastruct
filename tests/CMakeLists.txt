@@ -35,6 +35,16 @@ foreach(test ${OBJECT_NEWINDEX_TEST_CASES})
     add_test(NAME "object_newindex_${test}" COMMAND test_object_newindex ${test})
 endforeach()
 
+# Object pairs metamethod tests
+add_executable(test_object_pairs test_object_pairs.c)
+target_link_libraries(test_object_pairs ${CHECK_LIBRARIES} pthread lua53 luastruct)
+add_test(NAME "object_pairs" COMMAND test_object_pairs)
+
+# Object equals metamethod tests
+add_executable(test_object_eq test_object_eq.c)
+target_link_libraries(test_object_eq ${CHECK_LIBRARIES} pthread lua53 luastruct)
+add_test(NAME "object_equals" COMMAND test_object_eq)
+
 # Array index metamethod tests
 add_executable(test_array_index test_array_index.c)
 target_link_libraries(test_array_index ${CHECK_LIBRARIES} pthread lua53 luastruct)

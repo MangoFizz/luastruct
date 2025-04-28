@@ -4,7 +4,7 @@
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
-#include "test_array.h"
+#include "test_object.h"
 #include "debug.h"
 
 static lua_State *state = NULL;
@@ -24,28 +24,16 @@ void teardown(void) {
     state = NULL;
 }
 
-static int lua_check_pair(lua_State *state) {
-    int key = luaL_checkinteger(state, 1);
-    int value = luaL_checkinteger(state, 2);
-    ck_assert_int_eq(test_struct.static_int32[key - 1], value);
-    return 0;
-}
-
 START_TEST(test_pairs) {
-    for(int i = 0; i < 5; i++) {
-        test_struct.static_int32[i] = (i + 1) * 11;
-    }
-    lua_pushcfunction(state, lua_check_pair);
-    lua_setglobal(state, "check_pair");
-    int res = luaL_dostring(state, "function test(array) for k, v in pairs(array) do check_pair(k, v) end end");
+    int res = luaL_dostring(state, "function test(obj) for k, v in pairs(obj) do end end"); // test against values
     lua_getglobal(state, "test");
-    lua_getfield(state, -2, "static_int32");
+    lua_pushvalue(state, -2);
     ck_assert_int_eq(lua_pcall(state, 1, 0, 0), LUA_OK);
 }
 END_TEST
 
 Suite *create_suite(void) {
-    Suite *s = suite_create("array_pairs_metamethod");
+    Suite *s = suite_create("object_pairs_metamethod");
     
     TCase *len = tcase_create("pairs");
     tcase_add_checked_fixture(len, setup, teardown);
